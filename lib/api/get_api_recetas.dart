@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:resetas/models/entities/recipes.dart';
+//import 'package:resetas/models/entities/recipes.dart';
 import 'package:resetas/models/entities/token.dart';
 import 'package:resetas/models/entities/user.dart';
 import 'package:resetas/models/recipes_model.dart';
@@ -67,18 +67,18 @@ RecetasAPI() {
     }
   }
 
-   Future<Recipes> getResetas() async {
-    try {
-    final response = await _dio.get('/recetas');
+   Future<List<RecipesModel>> getResetas() async {
+    // Realiza la petición a la API
+    final response = await _dio.get('/recetas/all');
 
-      if (response.statusCode == 200) {
-        final recipeModel = RecipesModel.fromJsonModel(response.data);
-        return recipeModel.toRecipesEntity();
-      }else {
-        throw Exception('Register failed with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Register failed: $e');
+    // Verifica que la respuesta sea correcta y que contenga una lista
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data;
+      
+      // Mapea los datos a objetos de tipo Recipes
+      return data.map((recipeJson) => RecipesModel.fromJsonModel(recipeJson)).toList();
+    } else {
+      throw Exception('Error al obtener recetas');
     }
   }
 }

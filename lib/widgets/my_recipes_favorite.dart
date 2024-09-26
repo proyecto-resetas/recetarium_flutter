@@ -5,6 +5,9 @@ class MyRecipesFavorites extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
-  }
+    return ElevatedButton.icon(
+ onPressed: () {},
+ icon: const Icon(Icons.add_a_photo_outlined),
+ label: const Text('Photo'));
+}
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 //import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/providers/recipes_provider.dart';
+import 'package:resetas/widgets/card_recipe.dart';
 
 class ViewRecipes extends StatelessWidget {
 
@@ -10,15 +11,7 @@ class ViewRecipes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
-    final viewRecipesState = Provider.of<ViewRecipesProvider>(context);
-
-    IconData icon;
-    if (viewRecipesState.setFavorite != null) {
-      icon = Icons.favorite;
-    } else {
-      icon = Icons.favorite_border;
-    }
+    final viewRecipesProvider = context.watch<ViewRecipesProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -27,64 +20,18 @@ class ViewRecipes extends StatelessWidget {
       ),
       body: Column(
         children: [
-          SizedBox(     
-            child: Card(
-              margin: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  Container(
-                      padding: const EdgeInsets.all(10),
-                      child: const ClipRRect(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
-                        child:  Image(
-                          image: NetworkImage(
-                              'https://content.elmueble.com/medio/2024/02/23/pollo-curry-manzana_012ed92b_00535188_240223081823_900x900.jpg',
-                              scale: 10.0),
-                        ),
-                      )),
-                  Container(
-                      width: 130,
-                      height: 110, 
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Pollo con pan',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w700)),
-                          // SizedBox(height: 50,),
-                         Wrap(
-                           children: [
-                            Icon(Icons.attach_money, size: 20),
-                             Text('45,000'),
-                           ],
-                         )
-                        ],
-                      )
+          Expanded(
+              child: ListView.builder(
+                controller: viewRecipesProvider.recipeScrollController,
+                itemCount: viewRecipesProvider.recipeList.length, // entrada a la lista que se encuantra en la clase porvider del chat
+                itemBuilder: (context, index) {
+               final recipe = viewRecipesProvider.recipeList[index];
 
-                            ),
-                  Container(
-                    height: 110, 
-                    width: 70,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end, // Alinea hacia abajo (parte inferior)
-                      crossAxisAlignment: CrossAxisAlignment.end, // Alinea el contenido al final horizontalmente
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            // Acción del botón
-                          },
-                          icon: Icon(icon), // Puedes cambiar el ícono
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+               return CardRecipe(recipes:recipe);
+                },
               ),
             ),
-          ),
-          const SizedBox(height: 20)
+//          const SizedBox(height: 20)
         ],
       ),
     );
