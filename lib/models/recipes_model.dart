@@ -67,11 +67,13 @@ class RecipesModel {
 class Step {
   final String description;
   final String time;
+  final int timeScreen;
   final String id;
 
   Step({
     required this.description,
     required this.time,
+    required this.timeScreen,
     required this.id,
   });
 
@@ -79,6 +81,7 @@ class Step {
     return Step(
       description: json['description'],
       time: json['time'],
+      timeScreen: json['timeScreen'],
       id: json['_id'],
     );
   }

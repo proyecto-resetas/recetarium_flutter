@@ -23,7 +23,7 @@ RecetasAPI() {
     String _getBaseUrl() {
     if (Platform.isAndroid) {
       return 'http://10.0.2.2:4000/api/v1'; // Android (localhost -> 10.0.2.2)
-    } else if (Platform.isIOS) {
+    } else if (Platform.isIOS ) {
       return 'http://localhost:4000/api/v1'; // iOS (localhost)
     } else {
       throw Exception('Plataforma no soportada');

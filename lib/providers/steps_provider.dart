@@ -5,35 +5,20 @@ class StepsProvider with ChangeNotifier {
   int currentPage = 0;
   Timer? _timer;
 
-   int timeStringToMilliseconds(String timeString) {
-  final RegExp regExp = RegExp(r'(\d+)([hms])');
-  int totalMilliseconds = 0;
+ int _timeInMilliseconds = 0;
 
-  for (final match in regExp.allMatches(timeString)) {
-    final int value = int.parse(match.group(1)!);
-    final String unit = match.group(2)!;
+set timeInMilliseconds(int value) {  // forma para entrar a una propiedad de la clase con restriccion, con la linea 4 
 
-    switch (unit) {
-      case 'h':
-        totalMilliseconds += value * 60 * 60 * 1000;
-        break;
-      case 'm':
-        totalMilliseconds += value * 60 * 1000;
-        break;
-      case 's':
-        totalMilliseconds += value * 1000;
-        break;
-    }
+    if (value < 0) throw 'value have must be >=0';
+
+    _timeInMilliseconds = value;
   }
 
-  return totalMilliseconds;
-}
-
-  // Convierte el tiempo a milisegundos y maneja el PageController
-  void startAutoSlide(PageController controller, int totalPages, int timeInMilliseconds) {
+  // Iniciar auto-slide
+  void startAutoSlide(PageController controller, int totalPages) {
     _timer?.cancel(); // Cancelar cualquier temporizador anterior
 
-    _timer = Timer.periodic(Duration(milliseconds: timeInMilliseconds), (timer) {
+    _timer = Timer.periodic(Duration(milliseconds: _timeInMilliseconds), (timer) {
       if (currentPage < totalPages - 1) {
         currentPage++;
         controller.animateToPage(
@@ -48,6 +33,19 @@ class StepsProvider with ChangeNotifier {
     });
   }
 
+   // Pausar el auto-slide
+  void pauseAutoSlide() {
+    _timer?.cancel();
+  }
+
+    // Reiniciar el auto-slide
+  void resetAutoSlide(PageController controller) {
+    currentPage = 0;
+    controller.jumpToPage(0);
+    notifyListeners();
+    startAutoSlide(controller, controller.positions.length); // Reiniciar desde la primera página
+  }
+
   void setCurrentPage(int page) {
     currentPage = page;
     notifyListeners();
@@ -59,7 +57,13 @@ class StepsProvider with ChangeNotifier {
     super.dispose();
   }
 
- 
+ // Reinicia el contador al salir de la pantalla
+  void resetSlide() {
+    currentPage = 0;
+    _timer?.cancel();
+    notifyListeners();
+  }
+
 
 }
 
@@ -104,4 +108,29 @@ class StepsProvider with ChangeNotifier {
 
 
 //   _timeConversion = totalMilliseconds;
+// }
+
+
+//    int timeStringToMilliseconds(String timeString) {
+//   final RegExp regExp = RegExp(r'(\d+)([hms])');
+//   int totalMilliseconds = 0;
+
+//   for (final match in regExp.allMatches(timeString)) {
+//     final int value = int.parse(match.group(1)!);
+//     final String unit = match.group(2)!;
+
+//     switch (unit) {
+//       case 'h':
+//         totalMilliseconds += value * 60 * 60 * 1000;
+//         break;
+//       case 'm':
+//         totalMilliseconds += value * 60 * 1000;
+//         break;
+//       case 's':
+//         totalMilliseconds += value * 1000;
+//         break;
+//     }
+//   }
+
+//   return totalMilliseconds;
 // }

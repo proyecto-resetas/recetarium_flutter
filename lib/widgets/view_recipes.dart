@@ -38,20 +38,3 @@ class ViewRecipes extends StatelessWidget {
   }
 }
 
-  // const Text('Calificación:'),
-            // RatingBar.builder(             
-            //   itemSize: 20,
-            //   initialRating: 3, // Valor inicial
-            //   minRating: 1, // Calificación mínima
-            //   direction: Axis.horizontal, // Dirección horizontal
-            //   allowHalfRating: true, // Permite media estrella
-            //   itemCount: 3, // Número de estrellas
-            //   itemPadding:const EdgeInsets.symmetric(horizontal: 2.0),
-            //    itemBuilder: (context, _) => const Icon(
-            //     Icons.star,
-            //     color: Colors.amber,
-            //   ),
-            //   onRatingUpdate: (rating) {
-            //     print(rating); // Actualiza la calificación en tiempo real
-            //   },
-            // ),

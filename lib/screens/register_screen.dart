@@ -32,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Registro'),
+        title: const Text('Registro'),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -41,8 +41,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             borderRadius: BorderRadius.circular(20), // Radio de los bordes
             color: colors.primaryFixed,
             ),
-            margin: EdgeInsets.symmetric(horizontal: 30.0),
-            padding: EdgeInsets.all(30.0), 
+            margin: const EdgeInsets.symmetric(horizontal: 30.0),
+            padding: const EdgeInsets.all(30.0), 
             width: 480.0,
             height: 600.0,
             child: Form(
@@ -51,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   TextFormField(
                     controller: firstNameController,
-                    decoration: InputDecoration(labelText: 'Nombre'),
+                    decoration: const InputDecoration(labelText: 'Nombre'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu nombre';
@@ -61,7 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextFormField(
                     controller: lastNameController,
-                    decoration: InputDecoration(labelText: 'Apellido'),
+                    decoration: const InputDecoration(labelText: 'Apellido'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu apellido';
@@ -71,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextFormField(
                     controller: emailController,
-                    decoration: InputDecoration(labelText: 'Email'),
+                    decoration: const InputDecoration(labelText: 'Email'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu email';
@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextFormField(
                     controller: passwordController,
-                    decoration: InputDecoration(labelText: 'Password'),
+                    decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -92,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                    TextFormField(
                     controller: phoneController,
-                    decoration: InputDecoration(labelText: 'Teléfono'),
+                    decoration: const InputDecoration(labelText: 'Teléfono'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu teléfono';
@@ -102,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                    TextFormField(
                     controller: countryController,
-                    decoration: InputDecoration(labelText: 'Country',),
+                    decoration: const InputDecoration(labelText: 'Country',),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu Country';
@@ -112,7 +112,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                    TextFormField(
                     controller: cityController,
-                    decoration: InputDecoration(labelText: 'City'),
+                    decoration: const InputDecoration(labelText: 'City'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu City';
@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
@@ -140,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Navigator.pushReplacementNamed(context, '/home');
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Registro fallido')),
+                            const SnackBar(content: Text('Registro fallido')),
                           );
                         }
                       }

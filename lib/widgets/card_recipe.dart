@@ -57,7 +57,7 @@ class CardRecipe extends StatelessWidget {
                     recipes.descriptionRecipe,
                     maxLines: 2,  // Limita el número de líneas visibles
                     overflow: TextOverflow.ellipsis, 
-                    style: TextStyle(color: Colors.black54), // Muestra '...' cuando se corta
+                    style: const TextStyle(color: Colors.black54), // Muestra '...' cuando se corta
                     ),
                    //  SizedBox(height: 20,),
                     Wrap(

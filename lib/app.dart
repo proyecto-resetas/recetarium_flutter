@@ -19,7 +19,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ViewRecipesProvider()),
         ChangeNotifierProvider(create: (_) => StepsProvider()),
 
-
       ],
       child: MaterialApp(
         title: 'Resetas',

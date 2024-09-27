@@ -47,7 +47,7 @@ class RecipeDetailScreen extends StatelessWidget {
               recipe.nameRecipe,
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            Container(
+            SizedBox(
               height: 200,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
