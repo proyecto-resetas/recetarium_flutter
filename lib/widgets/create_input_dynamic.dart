@@ -1,12 +1,15 @@
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:resetas/providers/recipes_provider.dart';
 
-class MyRecipesFavorites extends StatefulWidget {
+class CreateDynamicInputs extends StatefulWidget {
+  const CreateDynamicInputs({super.key});
+
   @override
   _CreateDynamicInputsState createState() => _CreateDynamicInputsState();
 }
 
-class _CreateDynamicInputsState extends State<MyRecipesFavorites> {
+class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
   // Lista para almacenar los controladores de los inputs
   final List<TextEditingController> _controllersD = [];
   final List<TextEditingController> _controllersT = [];
@@ -26,31 +29,50 @@ class _CreateDynamicInputsState extends State<MyRecipesFavorites> {
     });
   }
 
-  // Función para recoger los valores de los inputs y almacenarlos en un objeto o lista
-  List<Map<String, dynamic>> _collectInputValues() {
-    List<Map<String, dynamic>> steps = [];
+  // Función para guardar los valores de los inputs en el estado global
+  void _saveStepsToGlobalState(BuildContext context) {
+    final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context, listen: false);
 
     for (int i = 0; i < _controllersD.length; i++) {
       String description = _controllersD[i].text;
       String time = _controllersT[i].text;
+      int timeScreen = timeStringToMilliseconds(_controllersT[i].text);
 
-      steps.add({
-        'description': description,
-        'time': time,
-      });
+
+      viewRecipesProvider.addStep(description, time, timeScreen); // Guarda el paso en el estado global
     }
-
-    return steps;
   }
+
+    int timeStringToMilliseconds(String timeString) {
+  final RegExp regExp = RegExp(r'(\d+)([hms])');
+  int totalMilliseconds = 0;
+
+  for (final match in regExp.allMatches(timeString)) {
+    final int value = int.parse(match.group(1)!);
+    final String unit = match.group(2)!;
+
+    switch (unit) {
+      case 'h':
+        totalMilliseconds += value * 60 * 60 * 1000;
+        break;
+      case 'm':
+        totalMilliseconds += value * 60 * 1000;
+        break;
+      case 's':
+        totalMilliseconds += value * 1000;
+        break;
+    }
+  }
+
+  return totalMilliseconds;
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Dynamic Inputs Example'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Container(
+        padding: const EdgeInsets.all(8.0),
+        height: 450,
         child: Column(
           children: [
             Expanded(
@@ -67,7 +89,7 @@ class _CreateDynamicInputsState extends State<MyRecipesFavorites> {
                       ),
                       TextFormField(
                         controller: _controllersT[index],
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Time',
                         ),
                         keyboardType: TextInputType.number,
@@ -80,13 +102,12 @@ class _CreateDynamicInputsState extends State<MyRecipesFavorites> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _addInput, // Llama a la función para agregar nuevos inputs
-              child:const Text('Agregar Input'),
+              child: const Text('Agregar Input'),
             ),
             ElevatedButton(
               onPressed: () {
-                // Al presionar este botón, recoge los valores y muestra el resultado
-                List<Map<String, dynamic>> steps = _collectInputValues();
-                print(steps); // Puedes hacer lo que desees con estos valores, como guardarlos o enviarlos a un API
+                _saveStepsToGlobalState(context); // Guarda los valores en el estado global
+                print(Provider.of<ViewRecipesProvider>(context, listen: false).steps); // Muestra los valores guardados
               },
               child: const Text('Guardar Steps'),
             ),

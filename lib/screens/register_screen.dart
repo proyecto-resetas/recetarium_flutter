@@ -1,3 +1,4 @@
+import 'package:country_state_city_pro/country_state_city_pro.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/entities/user.dart';
@@ -19,11 +20,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController countryController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
-
+  final TextEditingController country=TextEditingController();
+  final TextEditingController state=TextEditingController();
+  final TextEditingController city=TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+
+   // Nueva variable para almacenar el rol seleccionado
+  String? _selectedRole;
+  
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +45,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Container(
             decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20), // Radio de los bordes
-            color: colors.primaryFixed,
+            //color: colors.primaryFixed,
             ),
             margin: const EdgeInsets.symmetric(horizontal: 30.0),
             padding: const EdgeInsets.all(30.0), 
             width: 480.0,
-            height: 600.0,
+            height: 900,
             child: Form(
               key: _formKey,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   TextFormField(
                     controller: firstNameController,
-                    decoration: const InputDecoration(labelText: 'Nombre'),
+                    decoration: InputDecoration(labelText: 'Nombre',
+                    border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu nombre';
@@ -61,7 +71,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextFormField(
                     controller: lastNameController,
-                    decoration: const InputDecoration(labelText: 'Apellido'),
+                    decoration: InputDecoration(labelText: 'Apellido',
+                     border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                          ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu apellido';
@@ -71,7 +84,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextFormField(
                     controller: emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
+                    decoration: InputDecoration(labelText: 'Email',
+                     border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                          ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu email';
@@ -81,7 +97,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   TextFormField(
                     controller: passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
+                    decoration: InputDecoration(labelText: 'Password',
+                     border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                          ),
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -92,7 +111,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                    TextFormField(
                     controller: phoneController,
-                    decoration: const InputDecoration(labelText: 'Teléfono'),
+                    decoration: InputDecoration(labelText: 'Teléfono',
+                     border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                          ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor, ingresa tu teléfono';
@@ -100,22 +122,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return null;
                     },
                   ),
-                   TextFormField(
-                    controller: countryController,
-                    decoration: const InputDecoration(labelText: 'Country',),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, ingresa tu Country';
-                      }
-                      return null;
-                    },
+                   
+                  CountryStateCityPicker(
+                    country: country,
+                    state: state,
+                    city: city,
+                    dialogColor: const Color.fromARGB(255, 255, 255, 255),
+                    textFieldDecoration:  InputDecoration(
+                       border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      // Configura solo la línea inferior
+                      suffixIcon: const Icon(Icons.keyboard_arrow_down),
+                     
+                      labelStyle: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)), // Estilo de la etiqueta
+                    ),
                   ),
-                   TextFormField(
-                    controller: cityController,
-                    decoration: const InputDecoration(labelText: 'City'),
+
+                   // Añadir el campo para seleccionar el tipo de usuario
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    decoration: InputDecoration(labelText: 'quien quieres ser',
+                    border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                          ),
+                    items: ['user', 'admin'].map((String role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(role),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedRole = newValue;
+                      });
+                    },
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, ingresa tu City';
+                      if (value == null) {
+                        return 'Por favor, selecciona un tipo de usuario';
                       }
                       return null;
                     },
@@ -130,17 +174,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           userName: firstNameController.text,
                           lastName: lastNameController.text,
                           phone: phoneController.text,
-                          country: countryController.text,
-                          city: cityController.text,
+                          country: country.text,
+                          city: city.text,
+                          role: _selectedRole!, 
                         );
             
                         bool success = await authProvider.register(credentials);
             
                         if (success) {
-                          Navigator.pushReplacementNamed(context, '/home');
+                          // Redirigir según el tipo de usuario
+                          if (_selectedRole == 'admin') {
+                            Navigator.pushReplacementNamed(context, '/admin_home');
+                          } else {
+                            Navigator.pushReplacementNamed(context, '/home');
+                          }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Registro fallido')),
+                            SnackBar(content: Text('Registro fallido')),
                           );
                         }
                       }

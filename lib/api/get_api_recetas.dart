@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-//import 'package:resetas/models/entities/recipes.dart';
-import 'package:resetas/models/entities/token.dart';
+import 'package:resetas/models/entities/auth_response.dart';
 import 'package:resetas/models/entities/user.dart';
+import 'package:resetas/models/image_s3_model.dart';
 import 'package:resetas/models/recipes_model.dart';
+import 'package:resetas/models/token_model.dart';
 import 'package:resetas/models/user_model.dart';
 
 class RecetasAPI {
@@ -13,7 +14,7 @@ RecetasAPI() {
     // Configuramos el Dio con opciones dinámicas según la plataforma
     _dio = Dio(
       BaseOptions(
-        baseUrl: _getBaseUrl(), // Determina la URL base según la plataforma
+        baseUrl: _getBaseUrl(), 
         connectTimeout: const Duration(seconds: 10), // Tiempo de conexión
         receiveTimeout: const Duration(seconds: 10), // Tiempo de espera de recepción
       ),
@@ -22,56 +23,58 @@ RecetasAPI() {
 
     String _getBaseUrl() {
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:4000/api/v1'; // Android (localhost -> 10.0.2.2)
+      return 'http://10.0.2.2:4000/api/v1'; 
     } else if (Platform.isIOS ) {
-      return 'http://localhost:4000/api/v1'; // iOS (localhost)
+      return 'http://localhost:4000/api/v1'; 
     } else {
       throw Exception('Plataforma no soportada');
     }
   }
 
-  Future<AccessToken> login(User user) async {
-    try {
-      final response = await _dio.post('/auth/login', data: user.toJson());
 
-      if (response.statusCode == 201) {
-        if (response.data is Map<String, dynamic>) {
-          final userResModel = UserResModel.fromJsonModel(response.data);
-          return userResModel.toTokenEntity();
-        } else {
-          throw Exception("La respuesta no es del tipo esperado.");
-        }
+ 
+
+  Future<AuthResponse> login(User user) async {
+  try {
+    final response = await _dio.post('/auth/login', data: user.toJson());
+
+    if (response.statusCode == 201) { 
+      if (response.data is Map<String, dynamic>) {
+        final userResModel = UserResModel.fromJsonModel(response.data['user']);
+        final accessToken = AccessToken(accessToken: response.data['access_token']);
+        return AuthResponse(accessToken: accessToken, userResModel: userResModel);
       } else {
-        throw Exception('Login failed with status: ${response.statusCode}');
+        throw Exception("La respuesta no es del tipo esperado.");
       }
-    } catch (e) {
-      // Manejo de errores, puede ser un print o logging.
-      throw Exception('Login failed: $e');
+    } else {
+      throw Exception('Login failed with status: ${response.statusCode}');
     }
+  } catch (e) {
+    throw Exception('Login failed: $e');
   }
+}
 
-  Future<AccessToken> register(User user) async {
-    try {
-      final response = await _dio.post('/auth/register', data: user.toJson());
+Future<AuthResponse> register(User user) async {
+  try {
+    final response = await _dio.post('/auth/register', data: user.toJson());
 
-      if (response.statusCode == 201) {
-        final userResModel = UserResModel.fromJsonModel(response.data);
-        return userResModel.toTokenEntity();
-      }else {
-        throw Exception('Register failed with status: ${response.statusCode}');
-      }
-
-    } catch (e) {
-      throw Exception('Register failed: $e');
-
+    if (response.statusCode == 201) {
+      final userResModel = UserResModel.fromJsonModel(response.data['user']);
+      final accessToken = AccessToken(accessToken: response.data['access_token']);
+      return AuthResponse(accessToken: accessToken, userResModel: userResModel);
+    } else {
+      throw Exception('Register failed with status: ${response.statusCode}');
     }
+  } catch (e) {
+    throw Exception('Register failed: $e');
   }
+}
+
+  
 
    Future<List<RecipesModel>> getResetas() async {
-    // Realiza la petición a la API
-    final response = await _dio.get('/recetas/all');
+    final response = await _dio.get('/Recipes/all');
 
-    // Verifica que la respuesta sea correcta y que contenga una lista
     if (response.statusCode == 200) {
       final List<dynamic> data = response.data;
       
@@ -81,6 +84,50 @@ RecetasAPI() {
       throw Exception('Error al obtener recetas');
     }
   }
+
+
+  Future<RecipesModel> createRecipe(RecipesModel recipe) async {
+  try {
+    final response = await _dio.post('/Recipes/CreateRecetas', data: recipe.toJson());
+  print('entro ${recipe.category}');
+    if (response.statusCode == 201) {
+      final recipesModel = RecipesModel.fromJsonModel(response.data);
+      print('entro ${recipesModel}');
+      return  recipesModel;
+    } else {
+      throw Exception('create failed with status: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Create failed: $e');
+  }
 }
+
+   // Método para subir la imagen al servidor S3
+  Future<UploadImageResponse?>  uploadImage(File imageFile) async {
+    try {
+      String uploadUrl = '/s3/upload'; 
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(imageFile.path),
+      });
+
+      Response response = await _dio.post(uploadUrl, data: formData);
+
+      if (response.statusCode == 201) {
+        print('Image uploaded successfully: ${response.data}');
+    
+        return UploadImageResponse.fromJson(response.data); // forma de navegar en un json
+      } else {
+        return null;
+      }
+    } catch (e) {
+      throw Exception('Error uploading image: $e');
+      
+    }
+
+
+  }
+
+}
+
 
 

@@ -1,5 +1,4 @@
 class User {
-
   final String? userName;
   final String? lastName;
   final String email;
@@ -8,6 +7,7 @@ class User {
   final String? country;
   final String? city;
   final String? photoUrl;
+  final String? role;
 
   User({
   this.userName,
@@ -17,7 +17,8 @@ class User {
   this.phone,
   this.country,
   this.city,
-  this.photoUrl
+  this.photoUrl,
+  this.role
   });
 
   Map<String, dynamic> toJson() {

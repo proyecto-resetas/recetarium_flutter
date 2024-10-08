@@ -1,21 +1,27 @@
 
 
+import 'package:resetas/models/steps_model.dart';
+
 class RecipesModel {
-  final String id;
+  final String? id;
   final String nameRecipe;
   final String descriptionRecipe;
   final String ingredientsRecipe;
   final String imageUrl;
-  final String price;
-  final List<Step> steps; 
+  final int price;
+  final String category;
+  final String? createdBy;
+  final List<Steps> steps; 
 
   RecipesModel({
-  required this.id,
+  this.id,
   required this.nameRecipe,
   required this.descriptionRecipe,
   required this.ingredientsRecipe,
   required this.imageUrl,
   required this.price,
+  required this.category,
+  this.createdBy,
   required this.steps,
 
   });
@@ -29,17 +35,16 @@ class RecipesModel {
         descriptionRecipe: json["descriptionRecipe"],
         ingredientsRecipe: json["ingredientsRecipe"],
         imageUrl: json["imageUrl"],
-        price: json['price'],
+        price: json["price"] is int 
+        ? json["price"] 
+        : throw Exception('Price must be an integer'),
+        category: json["category"],
+        createdBy: json["createdBy"],
         steps: (json['steps'] as List)
-          .map((stepJson) => Step.fromJson(stepJson))
+          .map((stepJson) => Steps.fromJson(stepJson))
           .toList(),
       );
     }
-
-
-    // Map<String, dynamic> toJson() => {
-    //     "access_token": accessToken,
-    // };
 
     Map<String, dynamic> toJson() {
     return {
@@ -47,6 +52,8 @@ class RecipesModel {
       'descriptionRecipe': descriptionRecipe,
       'ingredientsRecipe': ingredientsRecipe,
       'imageUrl': imageUrl,
+      'category': category,
+      'createdBy': createdBy,
       'price': price,
       'steps': steps,
     };
@@ -60,29 +67,9 @@ class RecipesModel {
       ingredientsRecipe: ingredientsRecipe,
       imageUrl: imageUrl,
       price: price,
+      category: category,
+      createdBy: createdBy,
       steps: steps,
     );
 }
 
-class Step {
-  final String description;
-  final String time;
-  final int timeScreen;
-  final String id;
-
-  Step({
-    required this.description,
-    required this.time,
-    required this.timeScreen,
-    required this.id,
-  });
-
-  factory Step.fromJson(Map<String, dynamic> json) {
-    return Step(
-      description: json['description'],
-      time: json['time'],
-      timeScreen: json['timeScreen'],
-      id: json['_id'],
-    );
-  }
-}
