@@ -16,15 +16,13 @@ class MyProfile extends StatelessWidget {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          title:const Text('Profile'),
-        ),
-      
+     
         body:  SingleChildScrollView(
           child: Center(
             child: Column(   
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
+                const SizedBox(height: 40,),
                 SizedBox(
                   width: 150,
                   height: 150,

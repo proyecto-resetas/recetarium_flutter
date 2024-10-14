@@ -6,7 +6,7 @@ import 'package:resetas/widgets/card_recipe.dart';
 
 class ViewRecipes extends StatelessWidget {
 
-  const ViewRecipes( {super.key});
+  const ViewRecipes({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class ViewRecipes extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: colors.secondaryContainer,
-        title: const Text('All of the Recipes'),
+        title: const Text(''),
       ),
       body: Column(
         children: [

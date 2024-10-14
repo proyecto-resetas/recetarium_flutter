@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/config/themes/app_theme.dart';
 import 'package:resetas/providers/auth_provider.dart';
+import 'package:resetas/providers/car_shop_provider.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/providers/steps_provider.dart';
 import 'package:resetas/screens/admin_home_screen.dart';
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => CarShopProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ViewRecipesProvider()),
         ChangeNotifierProvider(create: (_) => StepsProvider()),

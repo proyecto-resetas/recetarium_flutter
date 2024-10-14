@@ -7,20 +7,21 @@ import 'package:resetas/models/user_model.dart';
 
 class AuthProvider extends ChangeNotifier {
 
-
-
   AccessToken? _accessToken; 
   UserResModel? _user;
+  
+
   final RecetasAPI _recetasAPI = RecetasAPI();
 
   AccessToken? get accessToken => _accessToken;
   UserResModel? get user => _user;
 
-    Future<bool> login(User user) async {
+  Future<bool> login(User user) async {
     try {
       final authResponse = await _recetasAPI.login(user);
       _accessToken = authResponse.accessToken;
        _user = authResponse.userResModel;
+
       if (_accessToken != null) {
         notifyListeners();
         return true; // Login exitoso

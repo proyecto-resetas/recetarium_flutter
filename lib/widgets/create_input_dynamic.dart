@@ -85,32 +85,47 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
                         controller: _controllersD[index],
                         decoration: InputDecoration(
                           labelText: 'Step ${index + 1}, description',
+
+                          border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
                         ),
                       ),
+                      const SizedBox(height: 10,),
                       TextFormField(
                         controller: _controllersT[index],
-                        decoration: const InputDecoration(
+                        decoration:  InputDecoration(
                           labelText: 'Time',
+                           border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          
                         ),
                         keyboardType: TextInputType.number,
                       ),
+                      const SizedBox(height: 10,),
+
                     ],
                   );
                 },
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addInput, // Llama a la función para agregar nuevos inputs
-              child: const Text('Agregar Input'),
-            ),
-            ElevatedButton(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _addInput, // Llama a la función para agregar nuevos inputs
+                  child: const Text('Agregar Input'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
               onPressed: () {
                 _saveStepsToGlobalState(context); // Guarda los valores en el estado global
                 print(Provider.of<ViewRecipesProvider>(context, listen: false).steps); // Muestra los valores guardados
               },
               child: const Text('Guardar Steps'),
             ),
+              ],
+            ),
+            
           ],
         ),
       ),

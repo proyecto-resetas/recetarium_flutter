@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/models/steps_model.dart';
+import 'package:resetas/models/token_model.dart';
 import 'package:resetas/providers/auth_provider.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/widgets/create_input_dynamic.dart';
 
 class CreateRecipe extends StatelessWidget {
   final TextEditingController nameRecipeController = TextEditingController();
-  final TextEditingController descriptionRecipeController =
-      TextEditingController();
-  final TextEditingController ingredientsRecipeController =
-      TextEditingController();
+  final TextEditingController descriptionRecipeController = TextEditingController();
+  final TextEditingController ingredientsRecipeController = TextEditingController();
   final TextEditingController categoryController = TextEditingController();
+  final TextEditingController levelController = TextEditingController();
   final TextEditingController _intController = TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
@@ -28,7 +28,7 @@ class CreateRecipe extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Recipe'),
+        title: const Text('Create Your Recipe'),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -134,6 +134,21 @@ class CreateRecipe extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 20),
+                          TextFormField(
+                          controller: levelController,
+                          decoration: InputDecoration(
+                            labelText: 'Level',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor, ingresa el nivel';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
                         TextFormField(
                           controller: _intController,
                           keyboardType: TextInputType.number,
@@ -192,17 +207,20 @@ class CreateRecipe extends StatelessWidget {
                                 nameRecipe: nameRecipeController.text,
                                 descriptionRecipe: descriptionRecipeController.text,
                                 ingredientsRecipe: ingredientsRecipeController.text,
+                                level: levelController.text,
                                 imageUrl:'${viewRecipesProvider.uploadedImageUrl}', // Puedes actualizar esto con la URL subida
                                 category: categoryController.text,
-                                createdBy: authProvider.user!.id,
+                                createdBy: authProvider.user!.username,
                                 price: priceValue,
                                 steps: viewRecipesProvider.steps
                                 .map((step) => Steps.fromJson(step))
                                 .toList(),
                               );
 
+                              AccessToken? token = authProvider.accessToken;
+
                               bool success =
-                                  await viewRecipesProvider.createRecipes(newRecipe);
+                                  await viewRecipesProvider.createRecipes(newRecipe, token?.accessToken);
                                   
                               if (success) {
                                 ScaffoldMessenger.of(context).showSnackBar(

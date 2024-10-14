@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
+import 'package:resetas/providers/car_shop_provider.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/screens/recipes_details.screen.dart';
 
@@ -12,7 +13,8 @@ class CardRecipe extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewRecipesState = Provider.of<ViewRecipesProvider>(context);
-
+    final shopProvider = Provider.of<CarShopProvider>(context, listen: false);
+    
     IconData icon;
     if (viewRecipesState.setFavorite != null) {
       icon = Icons.favorite_border;
@@ -24,9 +26,7 @@ class CardRecipe extends StatelessWidget {
     final isLandscape = size.width > size.height;
 
     return InkWell(
-      // Detecta el toque en la Card
       onTap: () {
-        // Navega al nuevo screen dinámico con la información de la receta
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -41,14 +41,14 @@ class CardRecipe extends StatelessWidget {
           children: [
             Container(
               width: 110,
-              height: 140,
+              height: 155,
               padding: const EdgeInsets.all(10),
               child: _MyImage(recipes.imageUrl),
             ),
             Expanded(
               // Para ocupar el espacio disponible
               child: Container(
-                height:140,
+                height:155,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,35 +62,63 @@ class CardRecipe extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    Text('\$${recipes.price.toString()}'),
                     Text(
                       recipes.descriptionRecipe,
-                      maxLines: isLandscape ? 2 : 2, // Cambia según orientación
+                      maxLines: isLandscape ? 2 : 1, 
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: Colors.black54),
                     ),
-                     Text(
-                      recipes.category,
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                    Row(
+                      children: [
+                        const Icon( Icons.person_4_outlined, size: 18 ),
+                        Text(
+                            '  ${recipes.createdBy}',
+                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                            ),
+                      ],
                     ),
-                    Text('\$${recipes.price.toString()}'),
+                     Row(
+                       children: [
+                        const Icon( Icons.category_outlined, size: 18 ),
+                         Text(
+                            '  ${recipes.category} ',
+                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                          ),
+                        const Icon( Icons.equalizer, size: 18 ),
+                         Text(
+                            ' ${recipes.level} ',
+                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                          ),
+                       ],
+                     ),
+                      
                   ],
                 ),
               ),
             ),
             SizedBox(
               height: 130,
-              width: 40,
+              width: 60,
               child: Column(
                 mainAxisAlignment:
-                    MainAxisAlignment.end, // Alinea hacia abajo (parte inferior)
+                    MainAxisAlignment.spaceBetween, 
                 crossAxisAlignment: CrossAxisAlignment
-                    .end, // Alinea el contenido al final horizontalmente
+                    .end, 
                 children: [
                   IconButton(
-                    onPressed: () {
-                      // Acción del botón
+                    onPressed: (){
+                      shopProvider.addToCart(recipes);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${recipes.nameRecipe} added to cart')),
+                      );
                     },
-                    icon: Icon(icon), // Puedes cambiar el ícono
+                    icon: Icon(Icons.add_shopping_cart_outlined),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                    },
+                    icon: Icon(icon), 
                   ),
                 ],
               ),
@@ -115,9 +143,9 @@ class _MyImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: Image.network(
         imageUrl,
-        width: size.width * 0.18, // Ajusta el ancho de la imagen
-        height: size.height * 0.12, // Ajusta la altura de la imagen
-        fit: BoxFit.cover, // Ajusta la imagen dentro del contenedor
+        width: size.width * 0.18, 
+        height: size.height * 0.12,
+        fit: BoxFit.cover,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
 
@@ -129,14 +157,14 @@ class _MyImage extends StatelessWidget {
           );
         },
         errorBuilder: (context, error, stackTrace) {
-          // Manejador de errores si la imagen no se puede cargar
+       
           return Container(
             width: size.width * 0.18,
             height: size.height * 0.12,
-            color: Colors.grey.shade300, // Color de fondo en caso de error
+            color: Colors.grey.shade300, 
             alignment: Alignment.center,
             child: const Icon(
-              Icons.error, // Ícono que muestra el error
+              Icons.error, 
               color: Colors.red,
               size: 40,
             ),

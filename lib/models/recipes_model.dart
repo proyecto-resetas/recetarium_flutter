@@ -9,8 +9,9 @@ class RecipesModel {
   final String ingredientsRecipe;
   final String imageUrl;
   final int price;
+  final String level;
   final String category;
-  final String? createdBy;
+  final String createdBy;
   final List<Steps> steps; 
 
   RecipesModel({
@@ -20,8 +21,9 @@ class RecipesModel {
   required this.ingredientsRecipe,
   required this.imageUrl,
   required this.price,
+  required this.level,
   required this.category,
-  this.createdBy,
+  required this.createdBy,
   required this.steps,
 
   });
@@ -38,6 +40,7 @@ class RecipesModel {
         price: json["price"] is int 
         ? json["price"] 
         : throw Exception('Price must be an integer'),
+        level: json["level"],
         category: json["category"],
         createdBy: json["createdBy"],
         steps: (json['steps'] as List)
@@ -53,6 +56,7 @@ class RecipesModel {
       'ingredientsRecipe': ingredientsRecipe,
       'imageUrl': imageUrl,
       'category': category,
+      'level': level,
       'createdBy': createdBy,
       'price': price,
       'steps': steps,
@@ -67,6 +71,7 @@ class RecipesModel {
       ingredientsRecipe: ingredientsRecipe,
       imageUrl: imageUrl,
       price: price,
+      level: level,
       category: category,
       createdBy: createdBy,
       steps: steps,

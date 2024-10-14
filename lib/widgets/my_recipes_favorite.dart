@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 
 class MyRecipesFavorites extends StatefulWidget {
+
+  
   @override
   _CreateDynamicInputsState createState() => _CreateDynamicInputsState();
 }

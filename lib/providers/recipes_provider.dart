@@ -26,6 +26,10 @@ class ViewRecipesProvider extends ChangeNotifier {
   get setFavorite => _favorites.iterator;
   
  List<RecipesModel> recipeList = [];
+
+
+
+  List<RecipesModel> addRecipesShopCar = [];
   // void toggleFavorite() {
   //   if (favorites.contains()) {
   //     favorites.remove();
@@ -48,11 +52,11 @@ class ViewRecipesProvider extends ChangeNotifier {
   notifyListeners();
 }
 
-  Future<bool> createRecipes(RecipesModel recipe) async {
+  Future<bool> createRecipes(RecipesModel recipe, token) async {
 
    // print('${recipe.category}, ${recipe.createdBy}, ${recipe.descriptionRecipe}, ${recipe.imageUrl}, ${recipe.nameRecipe}, ${recipe.steps[0]}, ${recipe.price}');
     try {
-      final recipeCreatedResponse = await recetasAPI.createRecipe(recipe);
+      final recipeCreatedResponse = await recetasAPI.createRecipe(recipe, token);
 
       recipeCreatedRes = recipeCreatedResponse;
       if(recipeCreatedRes != null){

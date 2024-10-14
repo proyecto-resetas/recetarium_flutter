@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:resetas/models/entities/auth_response.dart';
 import 'package:resetas/models/entities/user.dart';
 import 'package:resetas/models/image_s3_model.dart';
@@ -22,11 +23,17 @@ RecetasAPI() {
   }
 
     String _getBaseUrl() {
+
+    if (kIsWeb) {
+      return 'http://localhost:4000/api/v1'; // URL para Flutter Web
+    }
+
     if (Platform.isAndroid) {
       return 'http://10.0.2.2:4000/api/v1'; 
     } else if (Platform.isIOS ) {
       return 'http://localhost:4000/api/v1'; 
-    } else {
+    } 
+     else {
       throw Exception('Plataforma no soportada');
     }
   }
@@ -86,13 +93,17 @@ Future<AuthResponse> register(User user) async {
   }
 
 
-  Future<RecipesModel> createRecipe(RecipesModel recipe) async {
+  Future<RecipesModel> createRecipe(RecipesModel recipe, String token) async {
   try {
-    final response = await _dio.post('/Recipes/CreateRecetas', data: recipe.toJson());
-  print('entro ${recipe.category}');
+    final response = await _dio.post('/Recipes/CreateRecetas', data: recipe.toJson(),
+    options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',  // Aquí agregas el token en los headers
+        },
+      ),
+    );
     if (response.statusCode == 201) {
       final recipesModel = RecipesModel.fromJsonModel(response.data);
-      print('entro ${recipesModel}');
       return  recipesModel;
     } else {
       throw Exception('create failed with status: ${response.statusCode}');
