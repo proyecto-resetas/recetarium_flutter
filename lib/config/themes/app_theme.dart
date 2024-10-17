@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 // Colores personalizados
 const _colorCustoms = Color.fromRGBO(254, 166, 33, 1);
 const customPrimaryColor = Color(0xFFFFA740); // Morado
-const customSecondaryColor = Color(0xFF4C7B67); // Verde agua
+const customSecondaryColor = Color(0xFF114946); // Verde agua
 const customBackgroundColor = Color(0xFFF5F5F5); // Gris claro
 const customSurfaceColor = Color(0xFFFFFFFF); // Blanco
 const customErrorColor = Color(0xFFB00020); // Rojo

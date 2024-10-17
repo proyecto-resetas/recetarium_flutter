@@ -29,6 +29,8 @@ class User {
       'country': country,
       'city': city,
       'email': email,
+      'photo_url': photoUrl,
+      'role': role,
       'password': password,
     };
   }

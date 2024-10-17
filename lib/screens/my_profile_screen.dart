@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/providers/auth_provider.dart';
 
-class MyProfile extends StatelessWidget {
-  const MyProfile({super.key});
+class MyProfileScreen extends StatelessWidget {
+  const MyProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,15 @@ class MyProfile extends StatelessWidget {
     }
 
     return Scaffold(
-     
+       appBar: AppBar(
+        title: const Text('My Profile'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // Regresa a la pantalla anterior
+          },
+        ),
+      ),
         body:  SingleChildScrollView(
           child: Center(
             child: Column(   
@@ -48,7 +56,7 @@ class MyProfile extends StatelessWidget {
                 ),
                 ElevatedButton.icon(onPressed: (){
                     authProvider.logout();
-                    Navigator.pushReplacementNamed(context, '/login');
+                      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
           
                 }, label: const Text('Logout') , icon: const Icon(Icons.logout) ,)
               ]
@@ -97,3 +105,9 @@ class _MyPhoto extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

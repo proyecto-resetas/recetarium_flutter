@@ -72,7 +72,7 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.all(8.0),
-        height: 450,
+     //   height: 850,
         child: Column(
           children: [
             Expanded(
@@ -102,7 +102,6 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 10,),
-
                     ],
                   );
                 },
@@ -113,7 +112,7 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
               children: [
                 ElevatedButton(
                   onPressed: _addInput, // Llama a la función para agregar nuevos inputs
-                  child: const Text('Agregar Input'),
+                  child: const Text('Add Steps'),
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton(

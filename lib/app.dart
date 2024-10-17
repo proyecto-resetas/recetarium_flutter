@@ -9,6 +9,7 @@ import 'package:resetas/screens/admin_home_screen.dart';
 import 'package:resetas/screens/home_screen.dart';
 import 'package:resetas/screens/login_screen.dart';
 import 'package:resetas/screens/register_screen.dart';
+import 'package:resetas/screens/my_profile_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(), 
         '/admin_home': (context) => const AdminHomeScreen(),
+        '/my_profile': (context) => const MyProfileScreen(),
       },
       ),
     );

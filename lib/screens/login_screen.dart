@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 30.0),
                 padding: const EdgeInsets.all(30.0), 
                 width: 480.0,
-                height: 320,
+                height: 400,
                 child: Form(
                   key: _formKey,
                   child: Column(

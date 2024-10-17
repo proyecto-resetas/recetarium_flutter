@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
+import 'package:resetas/providers/car_shop_provider.dart';
 import 'package:resetas/screens/steps_screen.dart';
 
 class RecipeDetailScreen extends StatelessWidget {
@@ -10,7 +12,7 @@ class RecipeDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final shopProvider = Provider.of<CarShopProvider>(context, listen: false);
     final size = MediaQuery.of(context).size;
     
     return Scaffold(
@@ -93,13 +95,11 @@ class RecipeDetailScreen extends StatelessWidget {
                  // alignment: Alignment.center,
                   children:[ 
                     ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StepsScreen(recipe: recipe),
-                      ),
-                    );
+                    onPressed: (){
+                      shopProvider.addToCart(recipe);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${recipe.nameRecipe} added to cart')),
+                      );
                     },
                     child: const Icon(Icons.shopping_cart),
                     ),

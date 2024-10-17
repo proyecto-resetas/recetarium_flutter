@@ -184,9 +184,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 
                             bool success = await authProvider.register(credentials);
                 
+                            // Mostrar mensaje de éxito o fracaso del registro, y redireccionar según el tipo de usuario.
                             if (success) {
                               // Redirigir según el tipo de usuario
-                              if (_selectedRole == 'admin') {
+                            
+                              if (authProvider.user!.role == 'admin') {
                                 Navigator.pushReplacementNamed(context, '/admin_home');
                               } else {
                                 Navigator.pushReplacementNamed(context, '/home');

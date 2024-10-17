@@ -91,15 +91,14 @@ class CardRecipe extends StatelessWidget {
                             style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
                           ),
                        ],
-                     ),
-                      
+                     ),  
                   ],
                 ),
               ),
             ),
             SizedBox(
-              height: 130,
-              width: 60,
+              height: 150,
+              width: 40,
               child: Column(
                 mainAxisAlignment:
                     MainAxisAlignment.spaceBetween, 
