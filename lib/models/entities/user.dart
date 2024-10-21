@@ -7,7 +7,7 @@ class User {
   final String? country;
   final String? city;
   final String? photoUrl;
-  final String? role;
+  late String? role;
 
   User({
   this.userName,

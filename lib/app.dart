@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:resetas/config/themes/app_theme.dart';
 import 'package:resetas/providers/auth_provider.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
+import 'package:resetas/providers/recipes_favorite.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/providers/steps_provider.dart';
 import 'package:resetas/screens/admin_home_screen.dart';
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ViewRecipesProvider()),
         ChangeNotifierProvider(create: (_) => StepsProvider()),
+        ChangeNotifierProvider(create: (_) => RecipeFavoriteProvider()),
 
       ],
       child: MaterialApp(

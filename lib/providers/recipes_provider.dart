@@ -25,7 +25,7 @@ class ViewRecipesProvider extends ChangeNotifier {
 
   List<RecipesModel> recipeList = [];
   List<RecipesModel> recipeListFilter = [];
-  List<Map<String, dynamic>> _steps = [];
+  final List<Map<String, dynamic>> _steps = [];
   final _favorites = [];
 
   List<Map<String, dynamic>> get steps => _steps;
@@ -99,8 +99,8 @@ void clearListRecipe() {
 
   Future<bool> createRecipes(RecipesModel recipe, token) async {
 
-    print('provider,${recipe.category}, ${recipe.createdBy}, ${recipe.descriptionRecipe}, ${recipe.imageUrl}, ${recipe.nameRecipe}, ${recipe.steps[0]}, ${recipe.price}, ${recipe.ingredientsRecipe}');
     try {
+
       final recipeCreatedResponse = await recetasAPI.createRecipe(recipe, token);
 
       recipeCreatedRes = recipeCreatedResponse;

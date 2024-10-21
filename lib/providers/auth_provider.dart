@@ -36,6 +36,11 @@ class AuthProvider extends ChangeNotifier {
    // Función de register modificada para retornar un AccessToken
   Future<bool> register(User user) async {
     try {
+
+      if (user.role == 'chef') {
+      user.role = 'admin';
+    }
+
       final authResponse = await _recetasAPI.register(user);
       _accessToken = authResponse.accessToken;
       _user = authResponse.userResModel;

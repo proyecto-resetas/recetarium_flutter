@@ -8,7 +8,6 @@ class InputDynamicIngredients extends StatefulWidget {
   @override
   _InputDynamicIngredientsState createState() => _InputDynamicIngredientsState();
 }
-
 class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
   // Lista para almacenar los controladores de los inputs
   final List<TextEditingController> _controllersDescription = [];
@@ -56,30 +55,6 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
     }  
     }
 
-  //   int timeStringToMilliseconds(String timeString) {
-  // final RegExp regExp = RegExp(r'(\d+)([hms])');
-  // int totalMilliseconds = 0;
-
-  // for (final match in regExp.allMatches(timeString)) {
-  //   final int value = int.parse(match.group(1)!);
-  //   final String unit = match.group(2)!;
-
-  //   switch (unit) {
-  //     case 'h':
-  //       totalMilliseconds += value * 60 * 60 * 1000;
-  //       break;
-  //     case 'm':
-  //       totalMilliseconds += value * 60 * 1000;
-  //       break;
-  //     case 's':
-  //       totalMilliseconds += value * 1000;
-  //       break;
-  //   }
-  // }
-
-//   return totalMilliseconds;
-// }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,7 +72,7 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                       TextFormField(
                         controller: _controllersDescription[index],
                         decoration: InputDecoration(
-                          labelText: 'Ingredients ${index + 1}, description',
+                          labelText: 'Ingredient ${index + 1}, description',
                           border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10)),
                         ),
@@ -110,7 +85,7 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                            border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10)),
                         ),
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType.text,
                       ),
                       const SizedBox(height: 10,),
                     ],
@@ -118,12 +93,12 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                 },
               ),
             ),
-            const SizedBox(height: 30,),
+            const SizedBox(height: 10,),
              ElevatedButton(
                   onPressed: _addInput, // Llama a la función para agregar nuevos inputs
-                  child: const Text('add input Ingredient'),
+                  child: const Text('Add ingredient'),
               ),
-             const SizedBox(height: 30,),
+             const SizedBox(height: 10,),
              Expanded(
               child: ListView.builder(
                 itemCount: _controllersUtencilio.length,
@@ -133,7 +108,7 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                       TextFormField(
                         controller: _controllersUtencilio[index],
                         decoration: InputDecoration(
-                          labelText: 'Utencilio ${index + 1}',
+                          labelText: 'Utensil ${index + 1}',
                           border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10)),
                         ),
@@ -149,7 +124,7 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
               children: [
                  ElevatedButton(
                   onPressed: _addInputUtencilio, // Llama a la función para agregar nuevos inputs
-                  child: const Text('Add input u'),
+                  child: const Text('Add utensil'),
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton(
@@ -157,7 +132,7 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                 _saveStepsToGlobalState(context); // Guarda los valores en el estado global
                 print(Provider.of<ViewRecipesProvider>(context, listen: false).selectedIngredient); // Muestra los valores guardados
               },
-              child: const Text('Guardar'),
+              child: const Text('Save'),
             ),
               ],
             ),

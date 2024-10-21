@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
-import 'package:resetas/providers/recipes_provider.dart';
+import 'package:resetas/providers/recipes_favorite.dart';
+//import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/screens/recipes_details.screen.dart';
 
 class CardRecipe extends StatelessWidget {
@@ -12,11 +13,11 @@ class CardRecipe extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewRecipesState = Provider.of<ViewRecipesProvider>(context);
     final shopProvider = Provider.of<CarShopProvider>(context, listen: false);
+    final recipesFavorite = Provider.of<RecipeFavoriteProvider>(context);
     
     IconData icon;
-    if (viewRecipesState.setFavorite != null) {
+    if (recipesFavorite.getFavorite != null) {
       icon = Icons.favorite_border;
     } else {
       icon = Icons.favorite;
@@ -112,10 +113,14 @@ class CardRecipe extends StatelessWidget {
                         SnackBar(content: Text('${recipes.nameRecipe} added to cart')),
                       );
                     },
-                    icon: Icon(Icons.add_shopping_cart_outlined),
+                    icon: const Icon(Icons.add_shopping_cart_outlined),
                   ),
                   IconButton(
                     onPressed: () {
+                      recipesFavorite.addToCart(recipes);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${recipes.nameRecipe} added to favorites')),
+                      );
                     },
                     icon: Icon(icon), 
                   ),

@@ -99,7 +99,7 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
                                 borderRadius: BorderRadius.circular(10)),
                           
                         ),
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType.text,
                       ),
                       const SizedBox(height: 10,),
                     ],

@@ -16,9 +16,9 @@ class RecetasAPI {
     _dio = Dio(
       BaseOptions(
         baseUrl: _getBaseUrl(),
-        connectTimeout: const Duration(seconds: 10), // Tiempo de conexión
+        connectTimeout: const Duration(seconds: 20), // Tiempo de conexión
         receiveTimeout:
-            const Duration(seconds: 10), // Tiempo de espera de recepción
+            const Duration(seconds: 20), // Tiempo de espera de recepción
       ),
     );
   }
@@ -29,9 +29,9 @@ class RecetasAPI {
     }
 
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:4000/api/v1';
+      return 'http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1';
     } else if (Platform.isIOS) {
-      return 'http://localhost:4000/api/v1';
+      return 'http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1';
     } else {
       throw Exception('Plataforma no soportada');
     }
@@ -122,7 +122,6 @@ class RecetasAPI {
 
   Future<RecipesModel> createRecipe(RecipesModel recipe, String token) async {
 
-    print(recipe.ingredientsRecipe);
     try {
       final response = await _dio.post(
         '/Recipes/CreateRecetas',
@@ -156,7 +155,6 @@ class RecetasAPI {
       Response response = await _dio.post(uploadUrl, data: formData);
 
       if (response.statusCode == 201) {
-        print('Image uploaded successfully: ${response.data}');
 
         return UploadImageResponse.fromJson(
             response.data); // forma de navegar en un json

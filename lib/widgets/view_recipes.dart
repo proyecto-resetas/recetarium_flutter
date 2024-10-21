@@ -30,7 +30,7 @@ class ViewRecipes extends StatelessWidget {
           ],
           backgroundColor: colors.secondaryContainer,
           title: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
@@ -48,7 +48,7 @@ class ViewRecipes extends StatelessWidget {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.white),
+                        borderSide: const BorderSide(color: Colors.white),
                       ),
                     ),
                     onChanged: (value) {
@@ -61,7 +61,7 @@ class ViewRecipes extends StatelessWidget {
                   width: 180,
                   height: 40,
                   child: DropdownButtonFormField<String>(
-                    icon: Icon(color: colors.surface, Icons.filter_alt),
+                    icon: Icon(color: colors.surface,Icons.keyboard_arrow_down),
                     decoration: InputDecoration(
                       labelText: 'Categoría',
                       labelStyle: const TextStyle(color: Colors.white),
@@ -74,9 +74,10 @@ class ViewRecipes extends StatelessWidget {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.white),
+                        borderSide: const BorderSide(color: Colors.white),
                       ),
                     ),
+                    dropdownColor: colors.onPrimary, 
                     value: selectedCategory,
                     items: [
                       'Entradas',
@@ -92,8 +93,7 @@ class ViewRecipes extends StatelessWidget {
                         value: category,
                         child: Text(
                           category,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.black),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       );
                     }).toList(),
@@ -102,13 +102,12 @@ class ViewRecipes extends StatelessWidget {
                     },
                   ),
                 ),
-                //   const SizedBox(width: 16),
                 SizedBox(
                   width: 180,
                   height: 40,
                   child: DropdownButtonFormField<String>(
-                    icon: Icon(color: colors.surface, Icons.filter_alt),
-                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    icon: Icon(color: colors.surface, Icons.keyboard_arrow_down),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: InputDecoration(
                       labelText: 'Nivel',
                       labelStyle: const TextStyle(color: Colors.white),
@@ -121,18 +120,20 @@ class ViewRecipes extends StatelessWidget {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.white),
+                        borderSide: const BorderSide(color: Colors.white),
                       ),
                     ),
+                    dropdownColor: colors.onPrimary, 
                     value: selectedLevel,
                     items: ['Basico', 'Intermedio', 'Avanzado']
                         .map((String level) {
                       return DropdownMenuItem<String>(
                         value: level,
-                        child: Text(
-                          level,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.black),
+                        child: Container(
+                          child: Text(
+                            level,
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       );
                     }).toList(),

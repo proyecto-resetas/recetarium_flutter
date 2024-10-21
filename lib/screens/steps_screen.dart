@@ -83,9 +83,9 @@ class _StepsScreenState extends State<StepsScreen> {
   }
 
    List<Color> colorThemes = [
-  Color.fromARGB(255, 218, 182, 1),
-  Color.fromARGB(255, 7, 136, 159),
-  Color(0xFFE5EDE5),
+  const Color.fromARGB(255, 218, 182, 1),
+  const Color.fromARGB(255, 7, 136, 159),
+  const Color(0xFFE5EDE5),
   Colors.green,
   Colors.orange,
   Colors.orangeAccent,
@@ -97,66 +97,87 @@ Color getRandomColor() {
   return colorThemes[random.nextInt(colorThemes.length)];
 }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!mounted) return Container(); // Devuelve un contenedor vacío si no está montado
+@override
+Widget build(BuildContext context) {
+  if (!mounted) return Container();
 
-    final currentStep = widget.recipe.steps[_currentStepIndex];
-
-    return Scaffold(
-
-      backgroundColor: getRandomColor()
-      // const Color.fromARGB(255, 59, 99, 104),
-      ,
-      appBar: AppBar(
-        title: Text('Paso ${_currentStepIndex + 1} de ${widget.recipe.steps.length}'),
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Pasos de la Receta'),
+    ),
+    body: SingleChildScrollView( // Permite scroll vertical si el contenido es muy largo
+      child: Column(
+        children: [
+          // Limita el tamaño del Stepper en horizontal
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: 400.0,  // Limita la altura para evitar el error de flex
+            ),
+            child: Stepper(
+              type: StepperType.horizontal,
+              currentStep: _currentStepIndex,
+              steps: widget.recipe.steps.map((step) {
+                return Step(
+                  title: Text('Paso ${widget.recipe.steps.indexOf(step) + 1}'),
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        step.description,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Tiempo: ${step.time} segundos',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                    ],
+                  ),
+                  isActive: widget.recipe.steps.indexOf(step) == _currentStepIndex,
+                  state: widget.recipe.steps.indexOf(step) <= _currentStepIndex
+                      ? StepState.complete
+                      : StepState.indexed,
+                );
+              }).toList(),
+              onStepContinue: !_isPaused ? _goToNextStep : null, // Evita continuar si está pausado
+              onStepCancel: _currentStepIndex > 0 ? () => setState(() => _currentStepIndex--) : null,
+              controlsBuilder: (BuildContext context, ControlsDetails details) {
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _isPaused ? _resumeTimer : details.onStepContinue,
+                          child: Text(_isPaused ? 'Reanudar' : 'Siguiente'),
+                        ),
+                        const SizedBox(width: 20),
+                        ElevatedButton(
+                          onPressed: details.onStepCancel,
+                          child: const Text('Anterior'),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _pauseTimer,
+                          child: Text(_isPaused ? 'Pausado' : 'Pausar'),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment : MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 80),
-            Text(
-            //  'Paso ${_currentStepIndex + 1}: ${currentStep.description}',
-              currentStep.description,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Tiempo de este paso: ${(currentStep.time).toString()}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white70),
-            ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _isPaused ? _resumeTimer : _pauseTimer,
-                  child: Text(_isPaused ? 'Reanudar' : 'Pausar'),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _resetSteps,
-                  child: const Text('Reiniciar'),
-                ),
-              ],
-            ),
-            if (_isPaused && _currentStepIndex == 0) ...[
-              const SizedBox(height: 20),
-              const Center(
-                child: Text(
-                  'Se ha ¡PAUSADO!, Reinicia o Reanuda los pasos',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white70),
-                ),
-              ),
-            ],
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
+
+
 }

@@ -4,7 +4,7 @@ import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
 
 class CarShop extends StatelessWidget {
-    const CarShop({Key? key}) : super(key: key);
+    const CarShop({super.key});
 
  @override
   Widget build(BuildContext context) {

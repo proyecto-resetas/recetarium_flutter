@@ -1,112 +1,140 @@
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:resetas/models/recipes_model.dart';
+import 'package:resetas/providers/recipes_favorite.dart';
 
-class MyRecipesFavorites extends StatefulWidget {
 
-  
-  @override
-  _CreateDynamicInputsState createState() => _CreateDynamicInputsState();
-}
-
-class _CreateDynamicInputsState extends State<MyRecipesFavorites> {
-  // Lista para almacenar los controladores de los inputs
-  final List<TextEditingController> _controllersD = [];
-  final List<TextEditingController> _controllersT = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _controllersD.add(TextEditingController()); // Agregamos un controlador por defecto
-    _controllersT.add(TextEditingController()); // Agregamos un controlador por defecto
-  }
-
-  // Función para agregar un nuevo input dinámico
-  void _addInput() {
-    setState(() {
-      _controllersD.add(TextEditingController()); // Agrega un nuevo controlador de texto
-      _controllersT.add(TextEditingController()); // Agrega un nuevo controlador de texto
-    });
-  }
-
-  // Función para recoger los valores de los inputs y almacenarlos en un objeto o lista
-  List<Map<String, dynamic>> _collectInputValues() {
-    List<Map<String, dynamic>> steps = [];
-
-    for (int i = 0; i < _controllersD.length; i++) {
-      String description = _controllersD[i].text;
-      String time = _controllersT[i].text;
-
-      steps.add({
-        'description': description,
-        'time': time,
-      });
-    }
-
-    return steps;
-  }
-
+class MyRecipesFavorites extends StatelessWidget {
+  const MyRecipesFavorites({super.key});
+ 
   @override
   Widget build(BuildContext context) {
+    final recipeFavoriteProvider = Provider.of<RecipeFavoriteProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dynamic Inputs Example'),
+        title: const Text('Shopping Cart'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: recipeFavoriteProvider.favoriteList.isEmpty
+          ? const Center(
+              child: Text('No recipes in the cart'),
+            )
+          : ListView.builder(
+              itemCount: recipeFavoriteProvider.favoriteList.length,
+              itemBuilder: (context, index) {
+                final RecipesModel recipe = recipeFavoriteProvider.favoriteList[index];
+
+                 return Card(
+        clipBehavior: Clip.hardEdge,
+        margin: const EdgeInsets.all(10),
+        child: Row(
           children: [
+            Container(
+              width: 110,
+              height: 100,
+              padding: const EdgeInsets.all(10),
+              child: _MyImage(recipe.imageUrl),
+            ),
             Expanded(
-              child: ListView.builder(
-                itemCount: _controllersD.length,
-                itemBuilder: (context, index) {
-                  return Column(
-                    children: [
-                      TextFormField(
-                        controller: _controllersD[index],
-                        decoration: InputDecoration(
-                          labelText: 'Step ${index + 1}, description',
-                        ),
+              // Para ocupar el espacio disponible
+              child: Container(
+                height:100,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      maxLines: 1,
+                      recipe.nameRecipe,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
-                      TextFormField(
-                        controller: _controllersT[index],
-                        decoration: InputDecoration(
-                          labelText: 'Time',
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                     Text(
+                      recipe.category,
+                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                    ),
+                    Text('\$${recipe.price.toString()}'),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addInput, // Llama a la función para agregar nuevos inputs
-              child:const Text('Agregar Input'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Al presionar este botón, recoge los valores y muestra el resultado
-                List<Map<String, dynamic>> steps = _collectInputValues();
-                print(steps); // Puedes hacer lo que desees con estos valores, como guardarlos o enviarlos a un API
-              },
-              child: const Text('Guardar Steps'),
+            SizedBox(
+              height: 90,
+              width: 40,
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween, 
+                crossAxisAlignment: CrossAxisAlignment
+                    .end, 
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.favorite_border_outlined),
+                    onPressed: () {
+                      recipeFavoriteProvider.removeFromCart(recipe);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${recipe.nameRecipe} removed from cart')),
+                      );
+                    },
+                  ),
+                  
+                ],
+              ),
             ),
           ],
         ),
-      ),
-    );
+      );          
+                
+     },
+    ),
+   );
   }
+}
+
+
+class _MyImage extends StatelessWidget {
+  final String imageUrl;
+
+  const _MyImage(this.imageUrl);
 
   @override
-  void dispose() {
-    // Libera los controladores de texto cuando ya no se necesiten
-    for (var controller in _controllersD) {
-      controller.dispose();
-    }
-    for (var controller in _controllersT) {
-      controller.dispose();
-    }
-    super.dispose();
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        imageUrl,
+        width: size.width * 0.10, 
+        height: size.height * 0.8,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+
+          return Container(
+            width: size.width * 0.18,
+            height: size.height * 0.12,
+            alignment: Alignment.center,
+            child: const CircularProgressIndicator(),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+       
+          return Container(
+            width: size.width * 0.18,
+            height: size.height * 0.12,
+            color: Colors.grey.shade300, 
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.error, 
+              color: Colors.red,
+              size: 40,
+            ),
+          );
+        },
+      ),
+    );
   }
 }

@@ -41,7 +41,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       appBar: AppBar(
         title: Image.asset('assets/images/recetas-03.png', scale: 5,), // Título de la aplicación
       ),
-      endDrawer: Container(
+      endDrawer: SizedBox(
         height: 400,
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
@@ -49,7 +49,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             return Drawer(
                 width: isLargeScreen ? 250 : 170, // Ancho extendido en pantallas grandes
                 child: ListView(
-                  padding: EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   children: [
                     ListTile(
                       leading: const Icon(Icons.person_rounded),

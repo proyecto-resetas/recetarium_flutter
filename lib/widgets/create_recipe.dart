@@ -18,14 +18,20 @@ class CreateRecipe extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Your Recipe'),
+        title: const SizedBox(
+          child: Text(
+            textAlign:TextAlign.center,
+            'Create Your Recipe',
+            style: TextStyle(fontSize: 20),
+          ),
+        )
       ),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 5),
+            margin: const EdgeInsets.symmetric(horizontal: 28),
             padding: const EdgeInsets.all(10.0),
-            width: 700,
+            //width: 380,
             height: 1200,
             child: Form(
               key: _formKey, 
@@ -187,23 +193,6 @@ class CreateRecipe extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 20),
-                        //  TextFormField(
-                        //   controller: ingredientsRecipeController,
-                        //   maxLength: 200,
-                        //   maxLines: 3,
-                        //   textAlign : TextAlign.start,
-                        //   decoration: InputDecoration(
-                        //     labelText: 'Ingredients',
-                        //     border: OutlineInputBorder(
-                        //         borderRadius: BorderRadius.circular(10)),
-                        //   ),
-                        //   validator: (value) {
-                        //     if (value == null || value.isEmpty) {
-                        //       return 'Por favor, ingresa los ingredientes';
-                        //     }
-                        //     return null;
-                        //   },
-                        // ),
                          const Expanded(
                           child: InputDynamicIngredients(),
                         ),
