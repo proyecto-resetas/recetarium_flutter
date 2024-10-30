@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:resetas/config/themes/app_theme.dart';
 import 'package:resetas/providers/auth_provider.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
+import 'package:resetas/providers/payment_wompi_provider.dart';
 import 'package:resetas/providers/recipes_favorite.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/providers/steps_provider.dart';
+import 'package:resetas/screens/MyScrollableWidget.dart';
+//import 'package:resetas/screens/MyScrollableWidget.dart';
 import 'package:resetas/screens/admin_home_screen.dart';
 import 'package:resetas/screens/home_screen.dart';
 import 'package:resetas/screens/login_screen.dart';
@@ -24,6 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ViewRecipesProvider()),
         ChangeNotifierProvider(create: (_) => StepsProvider()),
         ChangeNotifierProvider(create: (_) => RecipeFavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentWompiProvider()),
 
       ],
       child: MaterialApp(
@@ -37,6 +41,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(), 
         '/admin_home': (context) => const AdminHomeScreen(),
         '/my_profile': (context) => const MyProfileScreen(),
+        '/ensayo': (context) =>  PaymentScreen(),
       },
       ),
     );

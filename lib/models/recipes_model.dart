@@ -1,17 +1,18 @@
-
-
+import 'package:resetas/models/ingredients_model.dart';
 import 'package:resetas/models/steps_model.dart';
+import 'package:resetas/models/utensil_model.dart';
 
 class RecipesModel {
   final String? id;
   final String nameRecipe;
   final String descriptionRecipe;
-  final String ingredientsRecipe;
+  final List<Ingredients> ingredientsRecipe;
   final String imageUrl;
   final int price;
   final String level;
   final String category;
   final String createdBy;
+    final List<Utensils> utensilRecipe; 
   final List<Steps> steps; 
 
   RecipesModel({
@@ -24,6 +25,7 @@ class RecipesModel {
   required this.level,
   required this.category,
   required this.createdBy,
+  required this.utensilRecipe,  
   required this.steps,
 
   });
@@ -35,7 +37,9 @@ class RecipesModel {
         id: json['_id'],
         nameRecipe: json["nameRecipe"],
         descriptionRecipe: json["descriptionRecipe"],
-        ingredientsRecipe: json["ingredientsRecipe"],
+        ingredientsRecipe: (json['ingredientsRecipe'] as List)
+          .map((ingredientJson) => Ingredients.fromJson(ingredientJson))
+          .toList(),
         imageUrl: json["imageUrl"],
         price: json["price"] is int 
         ? json["price"] 
@@ -43,6 +47,9 @@ class RecipesModel {
         level: json["level"],
         category: json["category"],
         createdBy: json["createdBy"],
+        utensilRecipe: (json['utensilRecipe'] as List)
+          .map((utensilJson) => Utensils.fromJson(utensilJson))
+          .toList(),
         steps: (json['steps'] as List)
           .map((stepJson) => Steps.fromJson(stepJson))
           .toList(),
@@ -59,6 +66,7 @@ class RecipesModel {
       'level': level,
       'createdBy': createdBy,
       'price': price,
+      'utensilRecipe': utensilRecipe,
       'steps': steps,
     };
   }
@@ -74,6 +82,7 @@ class RecipesModel {
       level: level,
       category: category,
       createdBy: createdBy,
+      utensilRecipe: utensilRecipe, 
       steps: steps,
     );
 }

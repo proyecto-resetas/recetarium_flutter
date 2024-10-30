@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/providers/recipes_favorite.dart';
+import 'package:resetas/widgets/image_card.dart';
 
 
 class MyRecipesFavorites extends StatelessWidget {
@@ -10,7 +11,7 @@ class MyRecipesFavorites extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recipeFavoriteProvider = Provider.of<RecipeFavoriteProvider>(context);
-
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Shopping Cart'),
@@ -23,8 +24,7 @@ class MyRecipesFavorites extends StatelessWidget {
               itemCount: recipeFavoriteProvider.favoriteList.length,
               itemBuilder: (context, index) {
                 final RecipesModel recipe = recipeFavoriteProvider.favoriteList[index];
-
-                 return Card(
+                return Card(
         clipBehavior: Clip.hardEdge,
         margin: const EdgeInsets.all(10),
         child: Row(
@@ -33,10 +33,9 @@ class MyRecipesFavorites extends StatelessWidget {
               width: 110,
               height: 100,
               padding: const EdgeInsets.all(10),
-              child: _MyImage(recipe.imageUrl),
+              child: MyImage(recipe.imageUrl),
             ),
             Expanded(
-              // Para ocupar el espacio disponible
               child: Container(
                 height:100,
                 padding: const EdgeInsets.symmetric(vertical: 10),
@@ -79,14 +78,12 @@ class MyRecipesFavorites extends StatelessWidget {
                       );
                     },
                   ),
-                  
                 ],
               ),
             ),
           ],
         ),
-      );          
-                
+      );                    
      },
     ),
    );
@@ -94,47 +91,3 @@ class MyRecipesFavorites extends StatelessWidget {
 }
 
 
-class _MyImage extends StatelessWidget {
-  final String imageUrl;
-
-  const _MyImage(this.imageUrl);
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Image.network(
-        imageUrl,
-        width: size.width * 0.10, 
-        height: size.height * 0.8,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-
-          return Container(
-            width: size.width * 0.18,
-            height: size.height * 0.12,
-            alignment: Alignment.center,
-            child: const CircularProgressIndicator(),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-       
-          return Container(
-            width: size.width * 0.18,
-            height: size.height * 0.12,
-            color: Colors.grey.shade300, 
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.error, 
-              color: Colors.red,
-              size: 40,
-            ),
-          );
-        },
-      ),
-    );
-  }
-}

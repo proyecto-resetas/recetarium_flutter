@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
 import 'package:resetas/providers/recipes_favorite.dart';
 //import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/screens/recipes_details.screen.dart';
+import 'package:resetas/widgets/image_card.dart';
 
 class CardRecipe extends StatelessWidget {
   final RecipesModel recipes;
@@ -44,7 +46,7 @@ class CardRecipe extends StatelessWidget {
               width: 110,
               height: 155,
               padding: const EdgeInsets.all(10),
-              child: _MyImage(recipes.imageUrl),
+              child: MyImage(recipes.imageUrl),
             ),
             Expanded(
               // Para ocupar el espacio disponible
@@ -113,7 +115,7 @@ class CardRecipe extends StatelessWidget {
                         SnackBar(content: Text('${recipes.nameRecipe} added to cart')),
                       );
                     },
-                    icon: const Icon(Icons.add_shopping_cart_outlined),
+                    icon: const Icon(Bootstrap.bag_plus_fill),
                   ),
                   IconButton(
                     onPressed: () {
@@ -129,51 +131,6 @@ class CardRecipe extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _MyImage extends StatelessWidget {
-  final String imageUrl;
-
-  const _MyImage(this.imageUrl);
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Image.network(
-        imageUrl,
-        width: size.width * 0.18, 
-        height: size.height * 0.12,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-
-          return Container(
-            width: size.width * 0.18,
-            height: size.height * 0.12,
-            alignment: Alignment.center,
-            child: const CircularProgressIndicator(),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-       
-          return Container(
-            width: size.width * 0.18,
-            height: size.height * 0.12,
-            color: Colors.grey.shade300, 
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.error, 
-              color: Colors.red,
-              size: 40,
-            ),
-          );
-        },
       ),
     );
   }

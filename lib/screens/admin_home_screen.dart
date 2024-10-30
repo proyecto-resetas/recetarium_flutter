@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:resetas/widgets/car_shop.dart';
 import 'package:resetas/widgets/create_recipe.dart';
 //import 'package:resetas/widgets/my_recipes_favorite.dart';
@@ -12,7 +13,6 @@ class AdminHomeScreen extends StatefulWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  //int selectedIndex = 0;
   int selectedIndexButtom = 0;
 
    Widget _page(){
@@ -37,6 +37,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       appBar: AppBar(
         title: Image.asset('assets/images/recetas-03.png', scale: 5,), // Título de la aplicación
@@ -63,7 +64,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       title: const Text('Settings'),
                       onTap: () {
                        
-                        Navigator.pushNamed(context, '/my_profile'); 
+                        Navigator.pushNamed(context, '/ensayo'); 
                    
                       },
                     ), 
@@ -76,25 +77,26 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       body: _page(),
       // muestra la página seleccionada
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Tipo fijo de barra de navegación
+        //iconSize: 24,
+        type: BottomNavigationBarType.shifting, // Tipo fijo de barra de navegación
         currentIndex: selectedIndexButtom, // Índice seleccionado
         onTap: _onItemTapped, // Cambiar de pestaña
         items: const [
            BottomNavigationBarItem(
-            icon: Icon(Icons.create_outlined),
-            activeIcon: Icon(Icons.create_rounded),
-            label: 'Create',
+            icon: Icon(Bootstrap.pen),
+            activeIcon: Icon(Bootstrap.pen_fill),
+            label: '',
           ),
          
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+            icon: Icon(Bootstrap.house),
+            activeIcon: Icon(Bootstrap.house_fill),
+            label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart_outlined),
-            activeIcon: Icon(Icons.shopping_cart_rounded),
-            label: 'Shop',
+            icon: Icon(Bootstrap.basket),
+            activeIcon: Icon(Bootstrap.basket_fill),
+            label: '',
           ),
         ],
         selectedItemColor: Theme.of(context).colorScheme.primary, // Color del ítem seleccionado

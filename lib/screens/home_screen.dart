@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:resetas/widgets/car_shop.dart';
 import 'package:resetas/widgets/my_recipes_favorite.dart';
 import 'package:resetas/widgets/view_recipes.dart';
@@ -79,24 +80,24 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _getSelectedPage(), // Muestra la página seleccionada
       bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Tipo fijo de barra de navegación
+        type: BottomNavigationBarType.shifting, // Tipo fijo de barra de navegación
         currentIndex: selectedIndex, // Índice seleccionado
         onTap: _onItemTapped, // Cambiar de pestaña
         items: const [
-            BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+       BottomNavigationBarItem(
+            icon: Icon(Bootstrap.house),
+            activeIcon: Icon(Bootstrap.house_fill),
+            label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart_outlined),
-            activeIcon: Icon(Icons.shopping_cart_rounded),
-            label: 'Shop',
+            icon: Icon(Bootstrap.basket),
+            activeIcon: Icon(Bootstrap.basket_fill),
+            label: '',
           ),
            BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border_rounded),
-            activeIcon: Icon(Icons.favorite_rounded),
-            label: 'favorite',
+            icon: Icon(Bootstrap.balloon_heart),
+            activeIcon: Icon(Bootstrap.balloon_heart_fill),
+            label: '',
           ),
         ],
         selectedItemColor: Theme.of(context).colorScheme.primary, // Color del ítem seleccionado

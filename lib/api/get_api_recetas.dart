@@ -31,7 +31,7 @@ class RecetasAPI {
     if (Platform.isAndroid) {
       return 'http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1';
     } else if (Platform.isIOS) {
-      return 'http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1';
+      return 'http://localhost:4000/api/v1'; // http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1
     } else {
       throw Exception('Plataforma no soportada');
     }
@@ -124,7 +124,7 @@ class RecetasAPI {
 
     try {
       final response = await _dio.post(
-        '/Recipes/CreateRecetas',
+        '/Recipes/CreateRecipes',
         data: recipe.toJson(),
         options: Options(
           headers: {
@@ -163,6 +163,54 @@ class RecetasAPI {
       }
     } catch (e) {
       throw Exception('Error uploading image: $e');
+    }
+  }
+
+
+  Future<void> processPayment(bool acceptTerms,int amount, ) async {
+    if (!acceptTerms) {
+      
+      print('acceptTerms is true');
+
+    }
+
+    try {
+      // Simulación de obtener el token de Wompi
+      final wompiResponse = await _dio.post('/payment-wompi/tokens/cards', data: {
+        'number': '4111111111111111', // Tarjeta de prueba
+        'exp_month': '12',
+        'exp_year': '25',
+        'cvc': '123',
+      });
+
+      final String paymentToken = wompiResponse.data;
+
+      // Realizar la solicitud a tu API de NestJS
+      final response = await _dio.post('/payment-wompi/payments/pay', data: {
+        'amount': amount,
+        'userPaymentSourceId': paymentToken,
+        'destinationAccount': 'destination_account_id',
+        'appAccount': 'app_account_id',
+        'acceptTerms': acceptTerms, // Aceptación de términos enviada
+      });
+
+      if (response.statusCode == 200) {
+        // Transacción exitosa, proceder a desbloquear el producto
+        await _dio.post('/payment-wompi/payments/unlock-product', data: {
+          'productId': 'product_id',
+          'userId': 'user_id',
+        });
+
+        // Mostrar un mensaje de éxito
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Pago completado y producto desbloqueado')),
+        // );
+      }
+    } catch (e) {
+      // Manejar error
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Error al procesar el pago')),
+      // );
     }
   }
 }

@@ -11,16 +11,6 @@ class Steps {
     this.id,
   });
 
-  // factory Steps.fromJson(Map<String, dynamic> json) {
-  //   return Steps(
-  //     description: json['description'],
-  //     time: json['time'],
-  //     timeScreen: json['timeScreen'] is int ? json["timeScreen"] 
-  //     : throw Exception('Price must be an integer'),
-  //     id: json['_id'],
-  //   );
-  // }
-
 factory Steps.fromJson(Map<String, dynamic> json) {
   return Steps(
     description: json['description'] ?? 'No description provided', // Valor por defecto si no existe

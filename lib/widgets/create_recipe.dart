@@ -125,14 +125,14 @@ class CreateRecipe extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20) ,
                       //  padding: EdgeInsets.symmetric(vertical: 40) ,
                         items: [
-                        'Entradas',
-                        'Aperitivos',
-                        'Platos principales', 
-                        'Postres',
-                        'Sopas', 
-                        'Ensaladas', 
-                        'Guarniciones', 
-                        'Salsas' ].map((String category) {
+                        'Entrada',
+                        'Aperitivo',
+                        'Plato Fuerte', 
+                        'Postre',
+                        'Sopa', 
+                        'Ensalada', 
+                        'Guarnicion', 
+                        'Salsa' ].map((String category) {
                           return DropdownMenuItem<String>(
                             value: category,
                             child: Text(category),

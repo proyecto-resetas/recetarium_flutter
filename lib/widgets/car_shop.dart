@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:icons_plus/icons_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
+import 'package:resetas/widgets/image_card.dart';
 
 class CarShop extends StatelessWidget {
     const CarShop({super.key});
@@ -32,7 +34,7 @@ class CarShop extends StatelessWidget {
               width: 110,
               height: 100,
               padding: const EdgeInsets.all(10),
-              child: _MyImage(recipe.imageUrl),
+              child: MyImage(recipe.imageUrl),
             ),
             Expanded(
               // Para ocupar el espacio disponible
@@ -70,7 +72,7 @@ class CarShop extends StatelessWidget {
                     .end, 
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_shopping_cart),
+                    icon: const Icon(Bootstrap.bag_dash_fill),
                     onPressed: () {
                       shopProvider.removeFromCart(recipe);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,52 +90,108 @@ class CarShop extends StatelessWidget {
                 
      },
     ),
+  bottomSheet: Container(
+  color: Colors.transparent, // Hace el fondo del Container transparente
+  margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+  height: 50,
+  width: 300,
+  child: ElevatedButton.icon(
+    onPressed: () {
+       showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (BuildContext context) {
+                return DraggableScrollableSheet(
+                  initialChildSize: 0.5,
+                  minChildSize: 0.3,
+                  maxChildSize: 0.8,
+                  builder: (BuildContext context, ScrollController scrollController) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      child: ListView(
+                        controller: scrollController,
+                        children: [
+                          const Text(
+                            'Payment',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          const TextField(
+                            decoration: InputDecoration(
+                              labelText: 'Nombre en la tarjeta',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const TextField(
+                            decoration: InputDecoration(
+                              labelText: 'Número de tarjeta',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 10),
+                          const Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    labelText: 'Expiración (MM/AA)',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    labelText: 'CVC',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () {
+                              
+                              // Lógica para procesar el pago
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Pagar ahora'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+    },
+    label: const Text('Buy with Wompi'),
+    icon: const Icon(Bootstrap.shop_window),
+    style: ElevatedButton.styleFrom(
+    elevation: 0, // Quita la sombra del botón
+    ),
+  ),
+),
+
    );
+
+   
   }
 }
 
 
-class _MyImage extends StatelessWidget {
-  final String imageUrl;
-
-  const _MyImage(this.imageUrl);
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Image.network(
-        imageUrl,
-        width: size.width * 0.10, 
-        height: size.height * 0.8,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-
-          return Container(
-            width: size.width * 0.18,
-            height: size.height * 0.12,
-            alignment: Alignment.center,
-            child: const CircularProgressIndicator(),
-          );
-        },
-        errorBuilder: (context, error, stackTrace) {
-       
-          return Container(
-            width: size.width * 0.18,
-            height: size.height * 0.12,
-            color: Colors.grey.shade300, 
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.error, 
-              color: Colors.red,
-              size: 40,
-            ),
-          );
-        },
-      ),
-    );
-  }
-}

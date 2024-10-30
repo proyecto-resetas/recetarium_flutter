@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:resetas/models/recipes_model.dart';
 
@@ -72,7 +71,7 @@ class _StepsScreenState extends State<StepsScreen> {
 
   void _resetSteps() {
     setState(() {
-      _currentStepIndex = 0; // Reinicia 
+      _currentStepIndex = 0; // Reinicia
     });
   }
 
@@ -82,102 +81,159 @@ class _StepsScreenState extends State<StepsScreen> {
     super.dispose();
   }
 
-   List<Color> colorThemes = [
-  const Color.fromARGB(255, 218, 182, 1),
-  const Color.fromARGB(255, 7, 136, 159),
-  const Color(0xFFE5EDE5),
-  Colors.green,
-  Colors.orange,
-  Colors.orangeAccent,
-  const Color.fromARGB(255, 37, 132, 40),
-];
+  List<Color> colorThemes = [
+    const Color.fromARGB(255, 218, 182, 1),
+    // const Color.fromARGB(255, 7, 136, 159),
+    // const Color(0xFFE5EDE5),
+    // Colors.green,
+    // Colors.orange,
+    // Colors.orangeAccent,
+    // const Color.fromARGB(255, 37, 132, 40),
+  ];
 
-Color getRandomColor() {
-  final random = Random();
-  return colorThemes[random.nextInt(colorThemes.length)];
-}
+  Color getRandomColor() {
+    final random = Random();
+    return colorThemes[random.nextInt(colorThemes.length)];
+  }
 
-@override
-Widget build(BuildContext context) {
-  if (!mounted) return Container();
+  @override
+  Widget build(BuildContext context) {
+    if (!mounted) return Container();
 
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Pasos de la Receta'),
-    ),
-    body: SingleChildScrollView( // Permite scroll vertical si el contenido es muy largo
-      child: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pasos de la Receta'),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Limita el tamaño del Stepper en horizontal
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: 400.0,  // Limita la altura para evitar el error de flex
-            ),
-            child: Stepper(
-              type: StepperType.horizontal,
-              currentStep: _currentStepIndex,
-              steps: widget.recipe.steps.map((step) {
-                return Step(
-                  title: Text('Paso ${widget.recipe.steps.indexOf(step) + 1}'),
-                  content: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        step.description,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Tiempo: ${step.time} segundos',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                    ],
+          // Indicador de pasos con scroll horizontal
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: widget.recipe.steps.map((step) {
+                int stepIndex = widget.recipe.steps.indexOf(step);
+
+                return GestureDetector(
+                  onTap: () => setState(() => _currentStepIndex = stepIndex),
+                  child: Container(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: _currentStepIndex == stepIndex
+                              ? const Color.fromRGBO(254, 166, 33, 1)
+                              : const Color.fromARGB(255, 205, 205, 205),
+                          child: Text(
+                            '${stepIndex + 1}',
+                            style: TextStyle(
+                              color: _currentStepIndex == stepIndex
+                                  ? const Color.fromARGB(255, 255, 255, 255)
+                                  : const Color.fromARGB(255, 133, 133, 133),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            step.description,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _currentStepIndex == stepIndex
+                                  ? const Color.fromRGBO(254, 166, 33, 1)
+                                  : const Color.fromARGB(255, 205, 205, 205),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  isActive: widget.recipe.steps.indexOf(step) == _currentStepIndex,
-                  state: widget.recipe.steps.indexOf(step) <= _currentStepIndex
-                      ? StepState.complete
-                      : StepState.indexed,
                 );
               }).toList(),
-              onStepContinue: !_isPaused ? _goToNextStep : null, // Evita continuar si está pausado
-              onStepCancel: _currentStepIndex > 0 ? () => setState(() => _currentStepIndex--) : null,
-              controlsBuilder: (BuildContext context, ControlsDetails details) {
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _isPaused ? _resumeTimer : details.onStepContinue,
-                          child: Text(_isPaused ? 'Reanudar' : 'Siguiente'),
-                        ),
-                        const SizedBox(width: 20),
-                        ElevatedButton(
-                          onPressed: details.onStepCancel,
-                          child: const Text('Anterior'),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _pauseTimer,
-                          child: Text(_isPaused ? 'Pausado' : 'Pausar'),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
             ),
+          ),
+          
+SizedBox(
+  child: Container(
+  //  width: MediaQuery.of(context).size.width * 0.9, // 90% de la pantalla en ancho
+    height: MediaQuery.of(context).size.height < 600
+        ? MediaQuery.of(context).size.height * 0.3// 60% de la pantalla en dispositivos pequeños
+        : 500, // 500 px en dispositivos grandes
+    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+    
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          widget.recipe.steps[_currentStepIndex].description,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Tiempo: ${widget.recipe.steps[_currentStepIndex].time} segundos',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        //const SizedBox(height: 70),
+      ],
+    ),
+  ),
+),
+
+
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    onPressed: _isPaused ? _resumeTimer : _goToNextStep,
+                    child:
+                        Icon(_isPaused ? Icons.restart_alt : Icons.skip_next)),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: _currentStepIndex > 0
+                      ? () => setState(() => _currentStepIndex--)
+                      : null,
+                  child: const Icon(Icons.replay),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: _pauseTimer,
+                child: Icon(_isPaused ? Icons.pause : Icons.pause),
+              ),
+              const SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: _resetSteps,
+                child: const Icon(Icons.cached),
+              ),
+            ],
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          Text(
+            _isPaused ? 'Pausado' : '',
+            style: const TextStyle(color: Colors.black38),
           ),
         ],
       ),
-    ),
-  );
-}
-
-
-
+    );
+  }
 }

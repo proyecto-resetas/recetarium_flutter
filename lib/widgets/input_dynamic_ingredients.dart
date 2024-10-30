@@ -49,9 +49,9 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
       viewRecipesProvider.addIngredient(description, amount); // Guarda el paso en el estado global
     }
  for (int i = 0; i < _controllersUtencilio.length; i++) {
-      String utencilio = _controllersUtencilio[i].text;
+      String utensil = _controllersUtencilio[i].text;
 
-      viewRecipesProvider.addUtencilio(utencilio); // Guarda el paso en el estado global
+      viewRecipesProvider.addUtensil(utensil); // Guarda el paso en el estado global
     }  
     }
 

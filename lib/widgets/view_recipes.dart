@@ -151,7 +151,7 @@ class ViewRecipes extends StatelessWidget {
             child: ListView.builder(
               controller: viewRecipesProvider.recipeScrollController,
               itemCount: viewRecipesProvider.recipeListFilter
-                  .length, // entrada a la lista que se encuantra en la clase porvider del chat
+                  .length,
               itemBuilder: (context, index) {
                 final recipe = viewRecipesProvider.recipeListFilter[index];
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:resetas/models/ingredients_model.dart';
 import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/models/steps_model.dart';
 import 'package:resetas/models/token_model.dart';
+import 'package:resetas/models/utensil_model.dart';
 import 'package:resetas/providers/auth_provider.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/widgets/input_dynamic_steps.dart';
@@ -52,7 +54,12 @@ class AddSteps extends StatelessWidget {
                                RecipesModel newRecipe = RecipesModel(
                                 nameRecipe: viewRecipesProvider.selectedNameRecipe!,
                                 descriptionRecipe: viewRecipesProvider.selectedDescriptionRecipe!,
-                                ingredientsRecipe: viewRecipesProvider.selectedIngredient!,
+                                ingredientsRecipe: viewRecipesProvider.selectedIngredient
+                                .map((ingredient) => Ingredients.fromJson(ingredient))
+                                .toList(),
+                                utensilRecipe: viewRecipesProvider.selectedUtensil
+                                .map((utensil) => Utensils.fromJson(utensil))
+                                .toList(),
                                 category: viewRecipesProvider.selectedCategory!,
                                 level:  viewRecipesProvider.selectedLevel!,
                                 imageUrl:'${viewRecipesProvider.uploadedImageUrl}', // Puedes actualizar esto con la URL subida
@@ -65,6 +72,8 @@ class AddSteps extends StatelessWidget {
                           
                               // Crea el nuevo modelo de receta
                               AccessToken? token = authProvider.accessToken;
+
+                              print('add steps ${newRecipe}');
                            
                               bool success = await viewRecipesProvider.createRecipes(newRecipe, token?.accessToken);
                               if (success) {

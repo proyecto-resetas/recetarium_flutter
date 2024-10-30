@@ -17,8 +17,6 @@ class ViewRecipesProvider extends ChangeNotifier {
   File? _selectedImage;
   String? _selectedCategory;
   String? _selectedLevel;
-  String? _selectedIngredient;
-  String? _selectedUtencilio;
 
   RecipesModel? recipeCreatedRes;
   RecipesModel? recetas; 
@@ -26,9 +24,13 @@ class ViewRecipesProvider extends ChangeNotifier {
   List<RecipesModel> recipeList = [];
   List<RecipesModel> recipeListFilter = [];
   final List<Map<String, dynamic>> _steps = [];
+  final List<Map<String, dynamic>> _selectedIngredient = [];
+  final List<Map<String, dynamic>> _selectedUtensil = [];
   final _favorites = [];
 
   List<Map<String, dynamic>> get steps => _steps;
+  List<Map<String, dynamic>> get selectedIngredient => _selectedIngredient;
+  List<Map<String, dynamic>> get selectedUtensil => _selectedUtensil;
   RecipesModel? get getRecetas => recetas;
   String? get selectedNameRecipe => _selectedNameRecipe;
   String? get selectedDescriptionRecipe => _selectedDescriptionRecipe;
@@ -38,8 +40,6 @@ class ViewRecipesProvider extends ChangeNotifier {
   String? get uploadedOriginalFileName => _uploadedOriginalFileName;
   String? get selectedCategory => _selectedCategory;
   String? get selectedLevel => _selectedLevel;
-   String? get selectedIngredient => _selectedIngredient;
-  String? get selectedUtencilio => _selectedUtencilio;
   get setFavorite => _favorites.iterator;
 
   ViewRecipesProvider() {
@@ -75,7 +75,6 @@ class ViewRecipesProvider extends ChangeNotifier {
   }
 
 
-
  Future<void> getRecipe() async {
   
   final List<RecipesModel> recetas = await recetasAPI.getRecipe(); 
@@ -98,6 +97,8 @@ void clearListRecipe() {
   }
 
   Future<bool> createRecipes(RecipesModel recipe, token) async {
+
+print('Provider recipe STEPS : ${recipe.steps}, ${recipe.ingredientsRecipe}, ${recipe.descriptionRecipe}, ${recipe.level}, ${recipe.price}, ${recipe.createdBy}, ${recipe.imageUrl}, ${recipe.nameRecipe},  ${recipe.category}');
 
     try {
 
@@ -160,12 +161,18 @@ void clearListRecipe() {
   }
 
    void addIngredient(String description, String amount) {
-    _selectedIngredient = '$description $amount';
+    _selectedIngredient.add({
+      'description': description,
+      'amount': amount
+    });
     notifyListeners(); // Notifica a los widgets que dependen de este estado
   }
 
-   void addUtencilio(String utencilio, ) {
-    _selectedUtencilio = utencilio;
+   void addUtensil(String utensil ) {
+     _selectedUtensil.add({
+      'utensil': utensil,
+
+    });
     notifyListeners(); // Notifica a los widgets que dependen de este estado
   }
 

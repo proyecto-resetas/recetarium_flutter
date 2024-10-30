@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 const _colorCustoms = Color.fromRGBO(254, 166, 33, 1);
 const customPrimaryColor = Color(0xFFFFA740); // Morado
 const customSecondaryColor = Color(0xFF114946); // Verde agua
+const customTertiaryColor = Color(0xFF0E8544); // Gris oscuro
 const customBackgroundColor = Color(0xFFF5F5F5); // Gris claro
 const customSurfaceColor = Color(0xFFFFFFFF); // Blanco
 const customErrorColor = Color(0xFFB00020); // Rojo
@@ -12,8 +13,10 @@ const customOnPrimaryColor = Color(0xFF80A69B); // Blanco para texto en fondo pr
 const customOnSecondaryColor = Color(0xFF000000); 
 
 ColorScheme customColorScheme = const ColorScheme(
+
   primary: customPrimaryColor,
   secondary: customSecondaryColor,
+  tertiary: customTertiaryColor,
  // background: customBackgroundColor,
   surface: customSurfaceColor,
   error: customErrorColor,

@@ -20,10 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  // final TextEditingController country=TextEditingController();
-  // final TextEditingController state=TextEditingController();
-  // final TextEditingController city=TextEditingController();
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
 
