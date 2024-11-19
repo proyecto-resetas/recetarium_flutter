@@ -70,7 +70,6 @@ class ViewRecipesProvider extends ChangeNotifier {
     _selectedCategory = null;
     _selectedLevel = null;
     clearSteps();
-   // _steps.clear;
     notifyListeners();
   }
 
@@ -86,7 +85,6 @@ Future<void> getRecipeFilter(String? category, String? level, String? createdBy)
 
   final List<RecipesModel> recetas = await recetasAPI.getRecipesFilter(category, level, createdBy); 
   recipeListFilter.addAll(recetas); // agregar todos los elementos de la lista
-  print(recetas);
   notifyListeners();
 
 }

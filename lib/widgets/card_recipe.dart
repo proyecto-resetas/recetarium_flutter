@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/models/recipes_model.dart';
+import 'package:resetas/providers/auth_provider.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
-import 'package:resetas/providers/recipes_favorite.dart';
+import 'package:resetas/providers/recipes_favorite_provider.dart';
 //import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/screens/recipes_details.screen.dart';
 import 'package:resetas/widgets/image_card.dart';
@@ -16,17 +17,15 @@ class CardRecipe extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shopProvider = Provider.of<CarShopProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final recipesFavorite = Provider.of<RecipeFavoriteProvider>(context);
-    
-    IconData icon;
-    if (recipesFavorite.getFavorite != null) {
-      icon = Icons.favorite_border;
-    } else {
-      icon = Icons.favorite;
-    }
+
 
     final size = MediaQuery.of(context).size;
     final isLandscape = size.width > size.height;
+
+     final bool isFavorite =
+        recipesFavorite.favoriteList.any((fav) => fav.id == recipes.id);
 
     return InkWell(
       onTap: () {
@@ -43,15 +42,15 @@ class CardRecipe extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 110,
-              height: 155,
+              width: 120,
+              height: 170,
               padding: const EdgeInsets.all(10),
               child: MyImage(recipes.imageUrl),
             ),
             Expanded(
               // Para ocupar el espacio disponible
               child: Container(
-                height:155,
+                height: size.height * 0.2,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,63 +67,83 @@ class CardRecipe extends StatelessWidget {
                     Text('\$${recipes.price.toString()}'),
                     Text(
                       recipes.descriptionRecipe,
-                      maxLines: isLandscape ? 2 : 1, 
+                      maxLines: isLandscape ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: Colors.black54),
                     ),
                     Row(
+                      verticalDirection: VerticalDirection.up,
                       children: [
-                        const Icon( Icons.person_4_outlined, size: 18 ),
+                        const Icon(Icons.person_4_outlined, size: 18),
                         Text(
-                            '  ${recipes.createdBy}',
-                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                            ),
+                          '  ${recipes.createdBy}',
+                          style: const TextStyle(
+                              color: Colors.black, fontWeight: FontWeight.w500),
+                        ),
                       ],
                     ),
-                     Row(
-                       children: [
-                        const Icon( Icons.category_outlined, size: 18 ),
-                         Text(
-                            '  ${recipes.category} ',
-                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                          ),
-                        const Icon( Icons.equalizer, size: 18 ),
-                         Text(
-                            ' ${recipes.level} ',
-                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                          ),
-                       ],
-                     ),  
+                    Row(
+                      children: [
+                        const Icon(Icons.category_outlined, size: 18),
+                        Text(
+                          '  ${recipes.category} ',
+                          style: const TextStyle(
+                              color: Colors.black, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(Icons.equalizer, size: 18),
+                        Text(
+                          ' ${recipes.level} ',
+                          overflow: TextOverflow.clip,
+                          style: const TextStyle(
+                              color: Colors.black, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
             SizedBox(
-              height: 150,
+              height: size.height * 0.2,
               width: 40,
               child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween, 
-                crossAxisAlignment: CrossAxisAlignment
-                    .end, 
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   IconButton(
-                    onPressed: (){
+                    onPressed: () {
                       shopProvider.addToCart(recipes);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${recipes.nameRecipe} added to cart')),
+                        SnackBar(
+                            content:
+                                Text('${recipes.nameRecipe} added to cart')),
                       );
                     },
                     icon: const Icon(Bootstrap.bag_plus_fill),
                   ),
                   IconButton(
                     onPressed: () {
-                      recipesFavorite.addToCart(recipes);
+                      recipesFavorite.addFavorite(
+                          recipes, authProvider.user?.id);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${recipes.nameRecipe} added to favorites')),
+                        SnackBar(
+                            content: Text(
+                                '${recipes.nameRecipe} added to favorites')),
                       );
                     },
-                    icon: Icon(icon), 
+                   // icon: Icon(icon),
+                   
+                   icon: Icon(
+                      isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border_outlined,
+                      color: isFavorite ? Colors.red : null,
+                    ),
+
                   ),
                 ],
               ),

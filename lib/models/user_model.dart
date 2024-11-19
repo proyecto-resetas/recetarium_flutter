@@ -1,3 +1,5 @@
+import 'package:resetas/models/book_recipe_model.dart';
+
 class UserResModel {
   final String id;
   final String username;
@@ -8,6 +10,8 @@ class UserResModel {
   final String city;
   final String photoUrl;
   final String role;
+  final List<BookRecipe> myFavorite;
+  final List<BookRecipe> myRecipe;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,6 +25,8 @@ class UserResModel {
     required this.city,
     required this.photoUrl,
     required this.role,
+    required this.myFavorite,
+    required this.myRecipe,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,8 +42,12 @@ class UserResModel {
       city: json['city'] as String,
       photoUrl: json['photoUrl'] as String? ?? '', // Manejo de valor null
       role: json['role'] as String,
+      myFavorite: (json['myFavorite'] as List).map((item) => BookRecipe.fromJson(item)).toList(),
+      myRecipe: (json['myRecipe'] as List).map((item) => BookRecipe.fromJson(item)).toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+
+
     );
   }
 }

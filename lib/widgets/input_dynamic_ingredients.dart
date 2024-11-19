@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:resetas/config/themes/app_input_style.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 
 class InputDynamicIngredients extends StatefulWidget {
@@ -71,21 +72,29 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                     children: [
                       TextFormField(
                         controller: _controllersDescription[index],
-                        decoration: InputDecoration(
+                        decoration: InputStyles.inputDecoration(
                           labelText: 'Ingredient ${index + 1}, description',
-                          border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
                         ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the ingredient';
+                            }
+                            return null;
+                          },
                       ),
                       const SizedBox(height: 10,),
                       TextFormField(
                         controller: _controllersAmount[index],
-                        decoration:  InputDecoration(
+                        decoration:  InputStyles.inputDecoration(
                           labelText: 'Amount',
-                           border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
                         ),
                         keyboardType: TextInputType.text,
+                         validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the Amount';
+                            }
+                            return null;
+                          },
                       ),
                       const SizedBox(height: 10,),
                     ],
@@ -107,11 +116,15 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                     children: [
                       TextFormField(
                         controller: _controllersUtencilio[index],
-                        decoration: InputDecoration(
+                        decoration: InputStyles.inputDecoration(
                           labelText: 'Utensil ${index + 1}',
-                          border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
                         ),
+                        validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the Utensil';
+                            }
+                            return null;
+                          },
                       ),
                       const SizedBox(height: 10,),
                     ],
@@ -135,8 +148,7 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
               child: const Text('Save'),
             ),
               ],
-            ),
-             
+            ), 
           ],
         ),
       ),

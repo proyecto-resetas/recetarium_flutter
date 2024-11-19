@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:resetas/models/book_recipe_model.dart';
 import 'package:resetas/models/entities/auth_response.dart';
 import 'package:resetas/models/entities/user.dart';
 import 'package:resetas/models/image_s3_model.dart';
@@ -8,28 +9,26 @@ import 'package:resetas/models/recipes_model.dart';
 import 'package:resetas/models/token_model.dart';
 import 'package:resetas/models/user_model.dart';
 
-class RecetasAPI {
+  class RecetasAPI {
   late Dio _dio;
 
   RecetasAPI() {
-    // Configuramos el Dio con opciones dinámicas según la plataforma
     _dio = Dio(
       BaseOptions(
         baseUrl: _getBaseUrl(),
         connectTimeout: const Duration(seconds: 20), // Tiempo de conexión
-        receiveTimeout:
-            const Duration(seconds: 20), // Tiempo de espera de recepción
+        receiveTimeout: const Duration(seconds: 20), // Tiempo de espera de recepción
       ),
     );
   }
 
   String _getBaseUrl() {
     if (kIsWeb) {
-      return 'http://localhost:4000/api/v1'; // URL para Flutter Web
+      return 'http://localhost:4000/api/v1'; 
     }
 
     if (Platform.isAndroid) {
-      return 'http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1';
+      return "http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1";
     } else if (Platform.isIOS) {
       return 'http://localhost:4000/api/v1'; // http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1
     } else {
@@ -39,8 +38,15 @@ class RecetasAPI {
 
   Future<AuthResponse> login(User user) async {
     try {
-      final response = await _dio.post('/auth/login', data: user.toJson());
-
+        final response = await _dio.post(
+        '/auth/login',
+        data: user.toJson(),
+        options: Options(
+          headers: {
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),
+      );
       if (response.statusCode == 201) {
         if (response.data is Map<String, dynamic>) {
           final userResModel =
@@ -63,12 +69,17 @@ class RecetasAPI {
   Future<AuthResponse> register(User user) async {
     try {
       
-      final response = await _dio.post('/auth/register', data: user.toJson());
+      final response = await _dio.post('/auth/register',
+      data: user.toJson(), 
+      options: Options(
+          headers: {
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),);
 
       if (response.statusCode == 201) {
         final userResModel = UserResModel.fromJsonModel(response.data['user']);
-        final accessToken =
-            AccessToken(accessToken: response.data['access_token']);
+        final accessToken = AccessToken(accessToken: response.data['access_token']);
         return AuthResponse(
             accessToken: accessToken, userResModel: userResModel);
       } else {
@@ -103,15 +114,19 @@ class RecetasAPI {
     if (level != null) queryParams['level'] = level;
     if (createdBy != null) queryParams['createdBy'] = createdBy;
 
-    // Realizar la petición GET con los queryParams
     final response = await _dio.get(
       '/Recipes/getRecipeFilter',
       queryParameters: queryParams, // Pasa los parámetros de consulta
+      options: Options(
+          headers: {
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),
     );
     if (response.statusCode == 200) {
        final data = response.data;
         final List<dynamic> recipesData = data['recipes'];
-      // Mapea los datos a objetos de tipo Recipes
+
       return recipesData
           .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
           .toList();
@@ -121,6 +136,7 @@ class RecetasAPI {
   }
 
   Future<RecipesModel> createRecipe(RecipesModel recipe, String token) async {
+// print('api : ${recipe.steps}, ${recipe.ingredientsRecipe}, ${recipe.descriptionRecipe}, ${recipe.level}, ${recipe.price}, ${recipe.createdBy}, ${recipe.imageUrl}, ${recipe.nameRecipe},  ${recipe.category}');
 
     try {
       final response = await _dio.post(
@@ -130,6 +146,8 @@ class RecetasAPI {
           headers: {
             'Authorization':
                 'Bearer $token', // Aquí agregas el token en los headers
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+
           },
         ),
       );
@@ -152,12 +170,20 @@ class RecetasAPI {
         'file': await MultipartFile.fromFile(imageFile.path),
       });
 
-      Response response = await _dio.post(uploadUrl, data: formData);
+      Response response = await _dio.post(
+        uploadUrl,
+        data: formData,
+        options: Options(
+          headers: {
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),
+        );
 
       if (response.statusCode == 201) {
 
         return UploadImageResponse.fromJson(
-            response.data); // forma de navegar en un json
+            response.data); 
       } else {
         return null;
       }
@@ -170,8 +196,6 @@ class RecetasAPI {
   Future<void> processPayment(bool acceptTerms,int amount, ) async {
     if (!acceptTerms) {
       
-      print('acceptTerms is true');
-
     }
 
     try {
@@ -213,4 +237,72 @@ class RecetasAPI {
       // );
     }
   }
+
+
+
+  Future<UserResModel> addRecipeFavorite(userId,BookRecipe recipeFavorite) async {
+
+    try {
+      final response = await _dio.post(
+        '/users/favorite-recipe/$userId',
+        data: recipeFavorite.toJson(),
+        options: Options(
+          headers: { 
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),
+      );
+      if (response.statusCode == 201) {
+        final recipesModel = UserResModel.fromJsonModel(response.data);
+        return recipesModel;
+      } else {
+        throw Exception('create failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Create failed: $e');
+    }
+
+  }
+
+//   Future<List<RecipesModel>> getFavoriteRecipes(favoriteRecipeIds) async {
+//   try {
+//     final response = await Dio().post(
+//       'http://<tu_api>/recipes/favorites',
+//       data: {'recipeIds': favoriteRecipeIds},
+//     );
+//     return response.data; // Aquí podrías mapear las recetas si tienes un modelo Recipe
+//   } catch (e) {
+//     print('Error fetching favorite recipes: $e');
+//     return [];
+//   }
+// }
+
+
+Future<List<RecipesModel>> getFavoriteRecipes(String? userId) async {
+  try {
+    final response = await _dio.get(
+      '/Recipes/favorites/$userId',
+      options: Options(
+          headers: { 
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['recipes'];
+
+      print(data);
+      return data
+          .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
+          .toList();
+    } else {
+      throw Exception('Failed to fetch favorite recipes');
+    }
+  } catch (e) {
+    print('Error fetching favorite recipes: $e');
+    return [];
+  }
+}
+
+
 }

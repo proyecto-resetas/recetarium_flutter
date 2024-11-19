@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
               
                               bool success = await authProvider.login(credentials);
-              
+            
                               if (success) {
                                 // Redirigir según el tipo de usuario
                                 if (authProvider.user?.role == 'admin') {

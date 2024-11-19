@@ -12,7 +12,7 @@ class RecipesModel {
   final String level;
   final String category;
   final String createdBy;
-    final List<Utensils> utensilRecipe; 
+  final List<Utensils> utensilRecipe; 
   final List<Steps> steps; 
 
   RecipesModel({
@@ -47,9 +47,7 @@ class RecipesModel {
         level: json["level"],
         category: json["category"],
         createdBy: json["createdBy"],
-        utensilRecipe: (json['utensilRecipe'] as List)
-          .map((utensilJson) => Utensils.fromJson(utensilJson))
-          .toList(),
+        utensilRecipe: (json['utensilRecipe'] as List).map((utensilJson) => Utensils.fromJson(utensilJson)).toList(),
         steps: (json['steps'] as List)
           .map((stepJson) => Steps.fromJson(stepJson))
           .toList(),

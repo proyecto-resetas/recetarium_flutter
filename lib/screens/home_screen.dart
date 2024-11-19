@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:resetas/widgets/car_shop.dart';
+import 'package:resetas/screens/car_shop.screen.dart';
 import 'package:resetas/widgets/my_recipes_favorite.dart';
 import 'package:resetas/widgets/view_recipes.dart';
 

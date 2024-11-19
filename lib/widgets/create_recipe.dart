@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:resetas/config/themes/app_input_style.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/widgets/add_steps.dart';
 import 'package:resetas/widgets/input_dynamic_ingredients.dart';
 
 class CreateRecipe extends StatelessWidget {
   final TextEditingController nameRecipeController = TextEditingController();
-  final TextEditingController descriptionRecipeController = TextEditingController();
+  final TextEditingController descriptionRecipeController =
+      TextEditingController();
   final TextEditingController _intController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -18,14 +20,13 @@ class CreateRecipe extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const SizedBox(
-          child: Text(
-            textAlign:TextAlign.center,
-            'Create Your Recipe',
-            style: TextStyle(fontSize: 20),
-          ),
-        )
-      ),
+          title: const SizedBox(
+        child: Text(
+          textAlign: TextAlign.center,
+          'Create Your Recipe',
+          style: TextStyle(fontSize: 20),
+        ),
+      )),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -34,7 +35,7 @@ class CreateRecipe extends StatelessWidget {
             //width: 380,
             height: 1200,
             child: Form(
-              key: _formKey, 
+              key: _formKey,
               child: Column(
                 children: [
                   Expanded(
@@ -57,7 +58,7 @@ class CreateRecipe extends StatelessWidget {
                                   fit: BoxFit.cover,
                                 ),
                               ),
-                        const SizedBox(height: 20),  
+                        const SizedBox(height: 20),
                         Row(
                           children: [
                             ElevatedButton(
@@ -80,14 +81,13 @@ class CreateRecipe extends StatelessWidget {
                         if (viewRecipesProvider.uploadedOriginalFileName !=
                             null)
                           Text(
-                              "${viewRecipesProvider.uploadedOriginalFileName}", maxLines: 1),
+                              "${viewRecipesProvider.uploadedOriginalFileName}",
+                              maxLines: 1),
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: nameRecipeController,
-                          decoration: InputDecoration(
+                          decoration: InputStyles.inputDecoration(
                             labelText: 'Name Recipe',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -101,11 +101,9 @@ class CreateRecipe extends StatelessWidget {
                           controller: descriptionRecipeController,
                           maxLength: 200,
                           maxLines: 3,
-                          textAlign : TextAlign.start,
-                          decoration: InputDecoration(
-                          labelText: 'Description',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                          textAlign: TextAlign.start,
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Description',
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -113,74 +111,69 @@ class CreateRecipe extends StatelessWidget {
                             }
                             return null;
                           },
-                        ),                    
+                        ),
                         const SizedBox(height: 10),
-                         DropdownButtonFormField<String>(
-                        value: viewRecipesProvider.selectedCategory,
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        decoration: InputDecoration(labelText: 'Category',
-                        border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                              ),
-                        borderRadius: BorderRadius.circular(20) ,
-                      //  padding: EdgeInsets.symmetric(vertical: 40) ,
-                        items: [
-                        'Entrada',
-                        'Aperitivo',
-                        'Plato Fuerte', 
-                        'Postre',
-                        'Sopa', 
-                        'Ensalada', 
-                        'Guarnicion', 
-                        'Salsa' ].map((String category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          viewRecipesProvider.setSelectedCategory(newValue);
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Por favor, selecciona un tipo de usuario';
-                          }
-                          return null;
-                        },
+                        DropdownButtonFormField<String>(
+                          value: viewRecipesProvider.selectedCategory,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Category',
+                          ),
+                          items: [
+                            'Entrada',
+                            'Aperitivo',
+                            'Plato Fuerte',
+                            'Postre',
+                            'Sopa',
+                            'Ensalada',
+                            'Guarnicion',
+                            'Salsa'
+                          ].map((String category) {
+                            return DropdownMenuItem<String>(
+                              value: category,
+                              child: Text(category),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            viewRecipesProvider.setSelectedCategory(newValue);
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Por favor, selecciona un tipo de usuario';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 20),
-                         DropdownButtonFormField<String>(
-                        value: viewRecipesProvider.selectedLevel,
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        decoration: InputDecoration(labelText: 'Level',
-                        border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                        borderRadius: BorderRadius.circular(20) ,
-                        items: ['Basico', 'Intermedio','Avanzado' ].map((String level) {
-                          return DropdownMenuItem<String>(
-                            value: level,
-                            child: Text(level),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
+                        DropdownButtonFormField<String>(
+                          value: viewRecipesProvider.selectedLevel,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Level',
+                          ),
+                          items: ['Basico', 'Intermedio', 'Avanzado']
+                              .map((String level) {
+                            return DropdownMenuItem<String>(
+                              value: level,
+                              child: Text(level),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
                             viewRecipesProvider.setSelectedLevel(newValue);
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Por favor, selecciona un tipo de usuario';
-                          }
-                          return null;
-                        },
-                      ),
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Por favor, selecciona un tipo de usuario';
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: _intController,
                           keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Ingresar el valor de tu Receta',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Ingresar el valor de tu Receta',  
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -193,7 +186,7 @@ class CreateRecipe extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 20),
-                         const Expanded(
+                        const Expanded(
                           child: InputDynamicIngredients(),
                         ),
                         ElevatedButton(
@@ -205,8 +198,8 @@ class CreateRecipe extends StatelessWidget {
                               if (viewRecipesProvider.selectedImage == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                      content:
-                                          Text('Por favor, selecciona una imagen')),
+                                      content: Text(
+                                          'Por favor, selecciona una imagen')),
                                 );
                                 return;
                               }
@@ -219,15 +212,16 @@ class CreateRecipe extends StatelessWidget {
 
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => AddSteps()),
+                                MaterialPageRoute(
+                                    builder: (context) => AddSteps()),
                               );
                             }
                           },
-                          child:const Text('Next'),
+                          child: const Text('Next'),
                         ),
                       ],
                     ),
-                  ),             
+                  ),
                 ],
               ),
             ),
@@ -238,17 +232,3 @@ class CreateRecipe extends StatelessWidget {
   }
 }
 
-
-//  RecipesModel newRecipe = RecipesModel(
-//                                 nameRecipe: nameRecipeController.text,
-//                                 descriptionRecipe: descriptionRecipeController.text,
-//                                 ingredientsRecipe: viewRecipesProvider.selectedIngredient!,
-//                                 category: viewRecipesProvider.selectedCategory!,
-//                                 level:  viewRecipesProvider.selectedLevel!,
-//                                 imageUrl:'${viewRecipesProvider.uploadedImageUrl}', // Puedes actualizar esto con la URL subida
-//                                 createdBy: authProvider.user!.username,
-//                                 price: priceValue,
-//                                 steps: viewRecipesProvider.steps
-//                                 .map((step) => Steps.fromJson(step))
-//                                 .toList(),
-//                               );

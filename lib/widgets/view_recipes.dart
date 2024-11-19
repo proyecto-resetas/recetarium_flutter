@@ -9,6 +9,7 @@ class ViewRecipes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final size = MediaQuery.of(context).size;
     final viewRecipesProvider = context.watch<ViewRecipesProvider>();
 
     String? selectedCategory;
@@ -42,14 +43,16 @@ class ViewRecipes extends StatelessWidget {
                     decoration: InputDecoration(
                       labelText: 'Name Chef',
                       labelStyle: const TextStyle(color: Colors.white),
+                        filled: true,
+                           fillColor: Colors.white.withOpacity(0.10),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.white),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.white),
-                      ),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
                     ),
                     onChanged: (value) {
                       createdBy = value;
@@ -58,36 +61,37 @@ class ViewRecipes extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 SizedBox(
-                  width: 180,
+                  width: size.width * 0.5,
                   height: 40,
                   child: DropdownButtonFormField<String>(
                     icon: Icon(color: colors.surface,Icons.keyboard_arrow_down),
                     decoration: InputDecoration(
-                      labelText: 'Categoría',
+                      labelText: 'Category',
                       labelStyle: const TextStyle(color: Colors.white),
                       contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 8.0),
+                          vertical: 9, horizontal: 10.0),
+                              filled: true,
+                           fillColor: Colors.white.withOpacity(0.10),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(
-                            color: Colors.white), // Borde blanco
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.white),
-                      ),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
                     ),
                     dropdownColor: colors.onPrimary, 
                     value: selectedCategory,
                     items: [
-                      'Entradas',
-                      'Aperitivos',
-                      'Platos principales', 
-                      'Postres',
-                      'Sopas', 
-                      'Ensaladas', 
-                      'Guarniciones', 
-                      'Salsas'
+                      'Entrada',
+                      'Aperitivo',
+                      'Plato principal', 
+                      'Postre',
+                      'Sopa', 
+                      'Ensalada', 
+                      'Guarnicion', 
+                      'Salsa'
                     ].map((String category) {
                       return DropdownMenuItem<String>(
                         value: category,
@@ -103,25 +107,26 @@ class ViewRecipes extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  width: 180,
+                  width: size.width * 0.6,
                   height: 40,
                   child: DropdownButtonFormField<String>(
                     icon: Icon(color: colors.surface, Icons.keyboard_arrow_down),
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: InputDecoration(
-                      labelText: 'Nivel',
+                      labelText: 'Level',
                       labelStyle: const TextStyle(color: Colors.white),
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 8, horizontal: 8.0),
+                       filled: true,
+                           fillColor: Colors.white.withOpacity(0.10),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(
-                            color: Colors.white), // Borde blanco
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.white),
-                      ),
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
                     ),
                     dropdownColor: colors.onPrimary, 
                     value: selectedLevel,
@@ -129,7 +134,7 @@ class ViewRecipes extends StatelessWidget {
                         .map((String level) {
                       return DropdownMenuItem<String>(
                         value: level,
-                        child: Container(
+                        child: SizedBox(
                           child: Text(
                             level,
                             style: const TextStyle(color: Colors.white),

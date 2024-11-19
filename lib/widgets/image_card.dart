@@ -14,14 +14,14 @@ class MyImage extends StatelessWidget {
       child: Image.network(
         imageUrl,
         width: size.width * 0.18, 
-        height: size.height * 0.12,
+        height: size.height * 0.14,
         fit: BoxFit.cover,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
 
           return Container(
             width: size.width * 0.18,
-            height: size.height * 0.12,
+            height: size.height * 0.14,
             alignment: Alignment.center,
             child: const CircularProgressIndicator(),
           );
@@ -30,7 +30,7 @@ class MyImage extends StatelessWidget {
        
           return Container(
             width: size.width * 0.18,
-            height: size.height * 0.12,
+            height: size.height * 0.14,
             color: Colors.grey.shade300, 
             alignment: Alignment.center,
             child: const Icon(

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:resetas/widgets/car_shop.dart';
+import 'package:resetas/widgets/book_recipes.dart';
 import 'package:resetas/widgets/create_recipe.dart';
-//import 'package:resetas/widgets/my_recipes_favorite.dart';
 import 'package:resetas/widgets/view_recipes.dart';
 
 class AdminHomeScreen extends StatefulWidget {
@@ -22,7 +21,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       case 1:
         return const ViewRecipes();
       case 2:
-        return  const CarShop();
+        return  const BookRecipes();
       default:
         throw UnimplementedError('No widget for $selectedIndexButtom');
       }
@@ -68,6 +67,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                    
                       },
                     ), 
+                    ListTile(
+                      leading: const Icon(Bootstrap.basket),
+                      title: const Text('Car Shop'),
+                      onTap: () {
+                       
+                        Navigator.pushNamed(context, '/car_shop'); 
+                   
+                      },
+                    ), 
                   ],
                 ),
               );
@@ -94,8 +102,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Bootstrap.basket),
-            activeIcon: Icon(Bootstrap.basket_fill),
+            icon: Icon(Bootstrap.journal_bookmark),
+            activeIcon: Icon(Bootstrap.journal_bookmark_fill),
             label: '',
           ),
         ],

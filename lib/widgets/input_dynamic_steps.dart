@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:resetas/config/themes/app_input_style.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 
 class CreateDynamicInputs extends StatefulWidget {
@@ -72,7 +73,6 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.all(8.0),
-     //   height: 850,
         child: Column(
           children: [
             Expanded(
@@ -83,23 +83,29 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
                     children: [
                       TextFormField(
                         controller: _controllersD[index],
-                        decoration: InputDecoration(
+                        decoration: InputStyles.inputDecoration(
                           labelText: 'Step ${index + 1}, description',
-
-                          border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10)),
                         ),
+                         validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the description';
+                            }
+                            return null;
+                          },
                       ),
                       const SizedBox(height: 10,),
                       TextFormField(
                         controller: _controllersT[index],
-                        decoration:  InputDecoration(
-                          labelText: 'Time',
-                           border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          
+                        decoration:  InputStyles.inputDecoration(
+                          labelText: 'Time, Example 1m, 2s, 3h',    
                         ),
                         keyboardType: TextInputType.text,
+                        validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the Time';
+                            }
+                            return null;
+                          },
                       ),
                       const SizedBox(height: 10,),
                     ],
@@ -123,8 +129,7 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
               child: const Text('Guardar Steps'),
             ),
               ],
-            ),
-            
+            ),         
           ],
         ),
       ),

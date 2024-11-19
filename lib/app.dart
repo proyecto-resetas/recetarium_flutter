@@ -4,7 +4,7 @@ import 'package:resetas/config/themes/app_theme.dart';
 import 'package:resetas/providers/auth_provider.dart';
 import 'package:resetas/providers/car_shop_provider.dart';
 import 'package:resetas/providers/payment_wompi_provider.dart';
-import 'package:resetas/providers/recipes_favorite.dart';
+import 'package:resetas/providers/recipes_favorite_provider.dart';
 import 'package:resetas/providers/recipes_provider.dart';
 import 'package:resetas/providers/steps_provider.dart';
 import 'package:resetas/screens/MyScrollableWidget.dart';
@@ -14,6 +14,7 @@ import 'package:resetas/screens/home_screen.dart';
 import 'package:resetas/screens/login_screen.dart';
 import 'package:resetas/screens/register_screen.dart';
 import 'package:resetas/screens/my_profile_screen.dart';
+import 'package:resetas/screens/car_shop.screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(), 
         '/admin_home': (context) => const AdminHomeScreen(),
         '/my_profile': (context) => const MyProfileScreen(),
+        '/car_shop': (context) => const CarShop(),
         '/ensayo': (context) =>  PaymentScreen(),
       },
       ),

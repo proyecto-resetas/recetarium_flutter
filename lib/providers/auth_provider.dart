@@ -16,6 +16,8 @@ class AuthProvider extends ChangeNotifier {
   AccessToken? get accessToken => _accessToken;
   UserResModel? get user => _user;
 
+
+
   Future<bool> login(User user) async {
     try {
       final authResponse = await _recetasAPI.login(user);
@@ -24,16 +26,15 @@ class AuthProvider extends ChangeNotifier {
 
       if (_accessToken != null) {
         notifyListeners();
-        return true; // Login exitoso
+        return true;
       }
-      return false; // Falló la autenticación
+      return false; 
     } catch (e) {
-    //  print('Error durante el login: $e');
-      return false; // Error de autenticación
+      throw('Error durante el login: $e');
+    //  return false; // Error de autenticación
     }
   }
 
-   // Función de register modificada para retornar un AccessToken
   Future<bool> register(User user) async {
     try {
 
@@ -46,22 +47,20 @@ class AuthProvider extends ChangeNotifier {
       _user = authResponse.userResModel;
       if (_accessToken != null) {
         notifyListeners();
-        return true; // Registro exitoso
+        return true; 
       }
-      return false; // Falló el registro
+      return false; 
     } catch (e) {
      //  print('Error durante el registro: $e');
-      return false; // Error en el registro
+      return false; 
     }
   }
 
-  // Puedes agregar una función para cerrar sesión si es necesario
   void logout() {
     _accessToken = null;
     notifyListeners();
   }
-
-
+  
 
 }
 

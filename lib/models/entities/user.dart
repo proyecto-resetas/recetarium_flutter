@@ -7,6 +7,8 @@ class User {
   final String? country;
   final String? city;
   final String? photoUrl;
+  final myFavorite;
+  final myRecipe;
   late String? role;
 
   User({
@@ -18,7 +20,10 @@ class User {
   this.country,
   this.city,
   this.photoUrl,
-  this.role
+  this.role,
+  this.myFavorite,
+  this.myRecipe,
+
   });
 
   Map<String, dynamic> toJson() {
