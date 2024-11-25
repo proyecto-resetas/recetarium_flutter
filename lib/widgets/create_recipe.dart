@@ -19,14 +19,14 @@ class CreateRecipe extends StatelessWidget {
     final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-          title: const SizedBox(
-        child: Text(
-          textAlign: TextAlign.center,
-          'Create Your Recipe',
-          style: TextStyle(fontSize: 20),
-        ),
-      )),
+      // appBar: AppBar(
+      //     title: const SizedBox(
+      //   child: Text(
+      //     textAlign: TextAlign.center,
+      //     'Create Your Recipe',
+      //     style: TextStyle(fontSize: 20),
+      //   ),
+      // )),
       body: Center(
         child: SingleChildScrollView(
           child: Container(

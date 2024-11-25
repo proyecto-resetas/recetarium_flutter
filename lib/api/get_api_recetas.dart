@@ -26,9 +26,8 @@ import 'package:resetas/models/user_model.dart';
     if (kIsWeb) {
       return 'http://localhost:4000/api/v1'; 
     }
-
     if (Platform.isAndroid) {
-      return "http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1";
+      return "https://resetas-backend.onrender.com/api/v1"; //http://10.0.2.2:4000/api/v1
     } else if (Platform.isIOS) {
       return 'http://localhost:4000/api/v1'; // http://ec2-18-246-215-252.us-west-2.compute.amazonaws.com:8000/api/v1
     } else {
@@ -303,6 +302,66 @@ Future<List<RecipesModel>> getFavoriteRecipes(String? userId) async {
     return [];
   }
 }
+
+
+Future<List<RecipesModel>> getMyRecipes(String? userId) async {
+  try {
+    final response = await _dio.get(
+      '/Recipes/myRecipes/$userId',
+      options: Options(
+          headers: { 
+            'x-api-key':'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml', 
+          },
+        ),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['recipes'];
+
+      print(data);
+      return data
+          .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
+          .toList();
+    } else {
+      throw Exception('Failed to fetch favorite recipes');
+    }
+  } catch (e) {
+    print('Error fetching favorite recipes: $e');
+    return [];
+  }
+}
+
+Future<List<RecipesModel>> getRecipesProperty(String? userId, {required String type}) async {
+  try {
+    // Validar el tipo
+    if (!['favorite', 'myRecipes'].contains(type)) {
+      throw ArgumentError('Invalid type. Must be "favorites" or "myRecipes".');
+    }
+
+    final response = await _dio.get(
+      '/Recipes/$type/$userId',
+      options: Options(
+        headers: {
+          'x-api-key': 'x.uacy4l2knh2.hsjnw35vhk.3udy8c89vy.a6oxghein6.gm6hg53awvu.virjogetkb1.8bez89e9sad.9u4kt3knze.yx5lqbjp098.i7t0g37kf54.fditkdcnddi.ja4icepi5ql.8geu3htan3.o3pwsdbbtul.61yqkytbi7e.vjledpha2ps.lcuhb6dvgre.9zcggs7r64.nmh4t4zi939.qab0w10s97r.0wo967t98ks.l73gubhot90.8eo3iuqo4xmq.0wr752lq48b.ac04pybb0aq.rxjvhwjs42.22hn76mhen8.ijq76jg5j7t.9vi97lnijcm.scme31lml',
+        },
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['recipes'];
+
+      print(data);
+      return data
+          .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
+          .toList();
+    } else {
+      throw Exception('Failed to fetch $type recipes');
+    }
+  } catch (e) {
+    print('Error fetching $type recipes: $e');
+    return [];
+  }
+}
+
 
 
 }

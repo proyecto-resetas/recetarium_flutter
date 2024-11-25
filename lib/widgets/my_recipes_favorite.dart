@@ -98,8 +98,7 @@ class MyRecipesFavorites extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recipeFavoriteProvider =
-        Provider.of<RecipeFavoriteProvider>(context, listen: false);
+    final recipeFavoriteProvider = Provider.of<RecipeFavoriteProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     return Scaffold(

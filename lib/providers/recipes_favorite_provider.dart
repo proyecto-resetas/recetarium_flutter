@@ -19,10 +19,10 @@ class RecipeFavoriteProvider extends ChangeNotifier {
    //get getFavorite => _favoriteList.iterator;
 
   // Método para agregar una receta a la lista de compras
-  void addToCart(RecipesModel recipe) {
-    _favoriteList.add(recipe);
-    notifyListeners(); // Notifica a los widgets dependientes
-  }
+  // void addToCart(RecipesModel recipe) {
+  //   _favoriteList.add(recipe);
+  //   notifyListeners(); // Notifica a los widgets dependientes
+  // }
  
   Future<bool> addFavorite(RecipesModel recipeFavorite, userId) async {
     try {
@@ -50,11 +50,11 @@ class RecipeFavoriteProvider extends ChangeNotifier {
   Future<void> getFavorites(UserResModel? user) async {
 
     try {
-      final response = await recetasAPI.getFavoriteRecipes(user!.id);
 
-      // Supongamos que 'response' es una lista de recetas.
+final recipes = await recetasAPI.getRecipesProperty(user!.id, type: 'favorite');
+
       _favoriteList.clear(); 
-      _favoriteList.addAll(response); 
+      _favoriteList.addAll(recipes); 
       notifyListeners();
     } catch (e) {
       notifyListeners();
