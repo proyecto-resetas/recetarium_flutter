@@ -1,0 +1,234 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:resetas/src/core/theme/app_input_style.dart';
+import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
+import 'package:resetas/src/features/recipes/ui/add_steps.dart';
+import 'package:resetas/src/features/recipes/ui/input_dynamic_ingredients.dart';
+
+class CreateRecipe extends StatelessWidget {
+  final TextEditingController nameRecipeController = TextEditingController();
+  final TextEditingController descriptionRecipeController =
+      TextEditingController();
+  final TextEditingController _intController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  CreateRecipe({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context);
+
+    return Scaffold(
+      // appBar: AppBar(
+      //     title: const SizedBox(
+      //   child: Text(
+      //     textAlign: TextAlign.center,
+      //     'Create Your Recipe',
+      //     style: TextStyle(fontSize: 20),
+      //   ),
+      // )),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 28),
+            padding: const EdgeInsets.all(10.0),
+            //width: 380,
+            height: 1200,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        viewRecipesProvider.selectedImage == null
+                            ? const Placeholder(
+                                fallbackHeight: 0,
+                                fallbackWidth: 0,
+                                color: Colors.black12,
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.file(
+                                  viewRecipesProvider.selectedImage!,
+                                  height: 80,
+                                  width: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                viewRecipesProvider
+                                    .pickImage(); // Seleccionar imagen
+                              },
+                              child: const Text("Select Image"),
+                            ),
+                            const SizedBox(width: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                viewRecipesProvider
+                                    .uploadImage(); // Subir la imagen
+                              },
+                              child: const Icon(Icons.upload),
+                            ),
+                          ],
+                        ),
+                        if (viewRecipesProvider.uploadedOriginalFileName !=
+                            null)
+                          Text(
+                              "${viewRecipesProvider.uploadedOriginalFileName}",
+                              maxLines: 1),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: nameRecipeController,
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Name Recipe',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor, ingresa el nombre de la receta';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: descriptionRecipeController,
+                          maxLength: 200,
+                          maxLines: 3,
+                          textAlign: TextAlign.start,
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Description',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor, ingresa la descripción';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<String>(
+                          value: viewRecipesProvider.selectedCategory,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Category',
+                          ),
+                          items: [
+                            'Entrada',
+                            'Aperitivo',
+                            'Plato Fuerte',
+                            'Postre',
+                            'Sopa',
+                            'Ensalada',
+                            'Guarnicion',
+                            'Salsa'
+                          ].map((String category) {
+                            return DropdownMenuItem<String>(
+                              value: category,
+                              child: Text(category),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            viewRecipesProvider.setSelectedCategory(newValue);
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Por favor, selecciona un tipo de usuario';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        DropdownButtonFormField<String>(
+                          value: viewRecipesProvider.selectedLevel,
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Level',
+                          ),
+                          items: ['Basico', 'Intermedio', 'Avanzado']
+                              .map((String level) {
+                            return DropdownMenuItem<String>(
+                              value: level,
+                              child: Text(level),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            viewRecipesProvider.setSelectedLevel(newValue);
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Por favor, selecciona un tipo de usuario';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                          controller: _intController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputStyles.inputDecoration(
+                            labelText: 'Ingresar el valor de tu Receta',  
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor ingresa el valor de tu Receta';
+                            }
+                            if (int.tryParse(value) == null) {
+                              return 'Por favor ingresa un número válido';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        const Expanded(
+                          child: InputDynamicIngredients(),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              int priceValue = int.parse(_intController.text);
+
+                              // Lógica para asegurar que la imagen esté cargada
+                              if (viewRecipesProvider.selectedImage == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Por favor, selecciona una imagen')),
+                                );
+                                return;
+                              }
+                              // Crea el nuevo modelo de receta
+                              viewRecipesProvider.setNewRecipe(
+                                nameRecipeController.text,
+                                descriptionRecipeController.text,
+                                priceValue,
+                              );
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => AddSteps()),
+                              );
+                            }
+                          },
+                          child: const Text('Next'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
