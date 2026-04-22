@@ -1,6 +1,8 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:resetas/src/features/recipes/data/steps_provider.dart';
+import 'package:resetas/src/features/recipes/models/steps_model.dart';
 
 class StepsScreen extends StatefulWidget {
   final RecipesModel recipe;
@@ -18,24 +20,26 @@ class _StepsScreenState extends State<StepsScreen> {
   @override
   void initState() {
     super.initState();
-    _startStepTimer();
+    // Iniciar el temporizador después de que el widget se monte
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startStepTimer();
+    });
   }
 
   void _startStepTimer() async {
-    while (_currentStepIndex < widget.recipe.steps.length && !_isPaused) {
+    final steps = _getSteps();
+    if (steps.isEmpty) return;
+
+    while (_currentStepIndex < steps.length && !_isPaused) {
       // Obtiene el tiempo del paso actual
-      int timeForStep = widget.recipe.steps[_currentStepIndex].timeScreen;
+      int timeForStep = steps[_currentStepIndex].timeScreen;
 
       if (!_isPaused && mounted) {
-        setState(() {
-          // Aquí podrías realizar cualquier acción que necesites al iniciar el paso
-        });
-
         // Espera el tiempo del paso antes de continuar
         await Future.delayed(Duration(milliseconds: timeForStep));
 
         // Después de completar el tiempo, pasa al siguiente paso
-        if (mounted) {
+        if (mounted && !_isPaused) {
           _goToNextStep();
         }
       } else {
@@ -45,11 +49,20 @@ class _StepsScreenState extends State<StepsScreen> {
     }
   }
 
+  List<Steps> _getSteps() {
+    final providerSteps = context.read<StepsProvider>().steps;
+    if (providerSteps.isNotEmpty) return providerSteps;
+    return widget.recipe.steps ?? [];
+  }
+
   void _goToNextStep() {
-    if (_currentStepIndex < widget.recipe.steps.length - 1) {
-      setState(() {
-        _currentStepIndex++;
-      });
+    final steps = _getSteps();
+    if (_currentStepIndex < steps.length - 1) {
+      if (mounted) {
+        setState(() {
+          _currentStepIndex++;
+        });
+      }
     } else {
       _resetSteps(); // Si es el último paso, reiniciar
       _pauseTimer(); // Pausar automáticamente
@@ -57,22 +70,28 @@ class _StepsScreenState extends State<StepsScreen> {
   }
 
   void _pauseTimer() {
-    setState(() {
-      _isPaused = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isPaused = true;
+      });
+    }
   }
 
   void _resumeTimer() {
-    setState(() {
-      _isPaused = false;
-    });
-    _startStepTimer(); // Reinicia el temporizador si se reanuda
+    if (mounted) {
+      setState(() {
+        _isPaused = false;
+      });
+      _startStepTimer(); // Reinicia el temporizador si se reanuda
+    }
   }
 
   void _resetSteps() {
-    setState(() {
-      _currentStepIndex = 0; // Reinicia
-    });
+    if (mounted) {
+      setState(() {
+        _currentStepIndex = 0; // Reinicia
+      });
+    }
   }
 
   @override
@@ -81,39 +100,33 @@ class _StepsScreenState extends State<StepsScreen> {
     super.dispose();
   }
 
-  List<Color> colorThemes = [
-    const Color.fromARGB(255, 218, 182, 1),
-    // const Color.fromARGB(255, 7, 136, 159),
-    // const Color(0xFFE5EDE5),
-    // Colors.green,
-    // Colors.orange,
-    // Colors.orangeAccent,
-    // const Color.fromARGB(255, 37, 132, 40),
-  ];
-
-  Color getRandomColor() {
-    final random = Random();
-    return colorThemes[random.nextInt(colorThemes.length)];
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!mounted) return Container();
 
+    final steps = _getSteps();
+
+    if (steps.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Pasos de la Receta')),
+        body: const Center(child: Text('No hay pasos disponibles para esta receta.')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pasos de la Receta'),
+        title: Text(widget.recipe.nameRecipe),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // Indicador de pasos con scroll horizontal
-
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: widget.recipe.steps.map((step) {
-                int stepIndex = widget.recipe.steps.indexOf(step);
+              children: steps.asMap().entries.map((entry) {
+                int stepIndex = entry.key;
+                final step = entry.value;
 
                 return GestureDetector(
                   onTap: () => setState(() => _currentStepIndex = stepIndex),
@@ -129,19 +142,22 @@ class _StepsScreenState extends State<StepsScreen> {
                             '${stepIndex + 1}',
                             style: TextStyle(
                               color: _currentStepIndex == stepIndex
-                                  ? const Color.fromARGB(255, 255, 255, 255)
+                                  ? Colors.white
                                   : const Color.fromARGB(255, 133, 133, 133),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
+                        const SizedBox(height: 4),
                         SizedBox(
                           width: 100,
                           child: Text(
-                            textAlign: TextAlign.center,
                             step.description,
+                            textAlign: TextAlign.center,
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: TextStyle(
+                              fontSize: 12,
                               color: _currentStepIndex == stepIndex
                                   ? const Color.fromRGBO(254, 166, 33, 1)
                                   : const Color.fromARGB(255, 205, 205, 205),
@@ -156,84 +172,126 @@ class _StepsScreenState extends State<StepsScreen> {
               }).toList(),
             ),
           ),
-          
-SizedBox(
-  child: Container(
-  //  width: MediaQuery.of(context).size.width * 0.9, // 90% de la pantalla en ancho
-    height: MediaQuery.of(context).size.height < 600
-        ? MediaQuery.of(context).size.height * 0.3// 60% de la pantalla en dispositivos pequeños
-        : 500, // 500 px en dispositivos grandes
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-    
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          widget.recipe.steps[_currentStepIndex].description,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Tiempo: ${widget.recipe.steps[_currentStepIndex].time} segundos',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        //const SizedBox(height: 70),
-      ],
-    ),
-  ),
-),
 
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    steps[_currentStepIndex].description,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.timer_outlined, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Tiempo: ${steps[_currentStepIndex].time}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            padding: const EdgeInsets.only(bottom: 40),
+            child: Column(
               children: [
-                ElevatedButton(
-                    onPressed: _isPaused ? _resumeTimer : _goToNextStep,
-                    child:
-                        Icon(_isPaused ? Icons.restart_alt : Icons.skip_next)),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _currentStepIndex > 0
-                      ? () => setState(() => _currentStepIndex--)
-                      : null,
-                  child: const Icon(Icons.replay),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _ActionButton(
+                      onPressed: _isPaused ? _resumeTimer : _pauseTimer,
+                      icon: _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                      label: _isPaused ? 'Reanudar' : 'Pausar',
+                    ),
+                    const SizedBox(width: 20),
+                    _ActionButton(
+                      onPressed: _goToNextStep,
+                      icon: Icons.skip_next_rounded,
+                      label: 'Siguiente',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _ActionButton(
+                      onPressed: _currentStepIndex > 0
+                          ? () => setState(() => _currentStepIndex--)
+                          : null,
+                      icon: Icons.skip_previous_rounded,
+                      label: 'Anterior',
+                      secondary: true,
+                    ),
+                    const SizedBox(width: 20),
+                    _ActionButton(
+                      onPressed: _resetSteps,
+                      icon: Icons.replay_rounded,
+                      label: 'Reiniciar',
+                      secondary: true,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: _pauseTimer,
-                child: Icon(_isPaused ? Icons.pause : Icons.pause),
-              ),
-              const SizedBox(width: 20),
-              ElevatedButton(
-                onPressed: _resetSteps,
-                child: const Icon(Icons.cached),
-              ),
-            ],
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          Text(
-            _isPaused ? 'Pausado' : '',
-            style: const TextStyle(color: Colors.black38),
-          ),
         ],
       ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String label;
+  final bool secondary;
+
+  const _ActionButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+    this.secondary = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: secondary ? Colors.grey[200] : const Color.fromRGBO(254, 166, 33, 1),
+        foregroundColor: secondary ? Colors.black87 : Colors.white,
+        elevation: secondary ? 0 : 4,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      icon: Icon(icon),
+      label: Text(label),
     );
   }
 }

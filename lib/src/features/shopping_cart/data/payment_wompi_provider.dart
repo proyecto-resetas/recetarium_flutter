@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/core/api/get_api_recetas.dart';
-import 'package:resetas/src/features/user_profile/models/user.dart';
+import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
 import 'package:resetas/src/features/auth/models/token_model.dart';
 import 'package:resetas/src/features/user_profile/models/user_model.dart';
 
@@ -23,7 +22,7 @@ final TextEditingController amountController = TextEditingController();
   UserResModel? _user;
   
 
-  final RecetasAPI _recetasAPI = RecetasAPI();
+  final RecipesApiService _recetasAPI = RecipesApiService();
 
   AccessToken? get accessToken => _accessToken;
   UserResModel? get user => _user;

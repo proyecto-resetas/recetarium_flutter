@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.recetarium"
-        minSdk = flutter.minSdkVersion
+        minSdkVersion = flutter.minSdkVersion // Requerido para EncryptedSharedPreferences
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -31,6 +31,10 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+}
+
+dependencies {
+    implementation "androidx.security:security-crypto:1.1.0-alpha06"
 }
 
 flutter {

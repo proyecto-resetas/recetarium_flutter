@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:resetas/src/app.dart';
-import 'package:hive_ce_flutter/hive_ce_flutter.dart';
+import 'package:resetas/src/core/services/local_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
+  
+  // Inicialización del servicio de almacenamiento local
+  final localStorageService = LocalStorageService();
+  await localStorageService.init();
+
   runApp(const MyApp());
 }
 

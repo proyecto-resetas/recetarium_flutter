@@ -76,7 +76,7 @@ class CardRecipe extends StatelessWidget {
                       children: [
                         const Icon(Icons.person_4_outlined, size: 18),
                         Text(
-                          '  ${recipes.createdBy}',
+                          '  ${recipes.creatorDisplayName}',
                           style: const TextStyle(
                               color: Colors.black, fontWeight: FontWeight.w500),
                         ),

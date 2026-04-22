@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:resetas/src/features/recipes/ui/book_recipes.dart';
 import 'package:resetas/src/features/recipes/ui/create_recipe.dart';
-import 'package:resetas/src/features/recipes/ui/view_recipes.dart';
+import 'package:resetas/src/features/recipes/ui/explore_recipes_screen.dart';
+import 'package:resetas/src/core/widgets/custom_bottom_nav_bar.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -19,7 +21,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       case 0:
        return  CreateRecipe();
       case 1:
-        return const ViewRecipes();
+        return const ExploreRecipesScreen();
       case 2:
         return  const BookRecipes();
       default:
@@ -38,9 +40,18 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   Widget build(BuildContext context) {
     
     return Scaffold(
+      backgroundColor: Colors.white,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Image.asset('assets/images/recetas-03.png', scale: 5,), // Título de la aplicación
-      ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child:        Image.asset('assets/images/recetas-03.png', scale: 5,),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        forceMaterialTransparency: true,
+        ),
       endDrawer: SizedBox(
         height: 400,
         child: LayoutBuilder(
@@ -55,15 +66,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       leading: const Icon(Icons.person_rounded),
                       title: const Text('Profile'),
                       onTap: () {                      
-                        Navigator.pushNamed(context, '/my_profile'); 
+                        context.push('/my_profile'); 
                       },
                     ), 
                     ListTile(
                       leading: const Icon(Icons.settings),
                       title: const Text('Settings'),
                       onTap: () {
-                       
-                        Navigator.pushNamed(context, '/ensayo'); 
+                        context.push('/ensayo'); 
                    
                       },
                     ), 
@@ -72,7 +82,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       title: const Text('Car Shop'),
                       onTap: () {
                        
-                        Navigator.pushNamed(context, '/car_shop'); 
+                        context.push('/car_shop'); 
                    
                       },
                     ), 
@@ -82,33 +92,32 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           },
         ),
       ),
-      body: _page(),
-      // muestra la página seleccionada
-      bottomNavigationBar: BottomNavigationBar(
-        //iconSize: 24,
-        type: BottomNavigationBarType.shifting, // Tipo fijo de barra de navegación
-        currentIndex: selectedIndexButtom, // Índice seleccionado
-        onTap: _onItemTapped, // Cambiar de pestaña
-        items: const [
-           BottomNavigationBarItem(
-            icon: Icon(Bootstrap.pen),
-            activeIcon: Icon(Bootstrap.pen_fill),
-            label: '',
+      body: SafeArea(
+        top: false,
+        child:
+        Padding(
+          padding: const EdgeInsets.only(top: 60),
+          child: _page(),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: CustomBottomNavBar(
+        currentIndex: selectedIndexButtom,
+        onTap: _onItemTapped,
+         items: [
+          CustomBottomNavItem(
+            icon: Bootstrap.pen,
+            activeIcon: Bootstrap.pen_fill,
           ),
-         
-          BottomNavigationBarItem(
-            icon: Icon(Bootstrap.house),
-            activeIcon: Icon(Bootstrap.house_fill),
-            label: '',
+          CustomBottomNavItem(
+            icon: Bootstrap.house,
+            activeIcon: Bootstrap.house_fill,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Bootstrap.journal_bookmark),
-            activeIcon: Icon(Bootstrap.journal_bookmark_fill),
-            label: '',
+          CustomBottomNavItem(
+            icon: Bootstrap.journal_bookmark,
+            activeIcon: Bootstrap.journal_bookmark_fill,
           ),
         ],
-        selectedItemColor: Theme.of(context).colorScheme.primary, // Color del ítem seleccionado
-        unselectedItemColor: Colors.grey, // Color de los ítems no seleccionados
       ),
     );
   }

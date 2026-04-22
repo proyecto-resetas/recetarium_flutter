@@ -4,6 +4,7 @@ import 'package:resetas/src/features/shopping_cart/ui/car_shop.screen.dart';
 import 'package:resetas/src/features/recipes/ui/my_recipes_favorite.dart';
 import 'package:resetas/src/features/recipes/ui/explore_recipes_screen.dart';
 import 'package:go_router/go_router.dart';
+import 'package:resetas/src/core/widgets/custom_bottom_nav_bar.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -37,7 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        forceMaterialTransparency: true,
         title: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -54,9 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (BuildContext context, BoxConstraints constraints) {
             bool isLargeScreen = constraints.maxWidth >= 600;
             return Drawer(
-              width: isLargeScreen
-                  ? 250
-                  : 170, // Ancho extendido en pantallas grandes
+              width: isLargeScreen ? 250 : 170, // Ancho extendido en pantallas grandes
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 children: [
@@ -80,33 +85,26 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      body: _getSelectedPage(), // Muestra la página seleccionada
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType
-            .shifting, // Tipo fijo de barra de navegación
-        currentIndex: selectedIndex, // Índice seleccionado
-        onTap: _onItemTapped, // Cambiar de pestaña
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Bootstrap.house),
-            activeIcon: Icon(Bootstrap.house_fill),
-            label: '',
+      body: SafeArea(
+        child: _getSelectedPage(),
+      ), // Muestra la página seleccionada
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: selectedIndex,
+        onTap: _onItemTapped,
+        items: [
+          CustomBottomNavItem(
+            icon: Bootstrap.house,
+            activeIcon: Bootstrap.house_fill,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Bootstrap.basket),
-            activeIcon: Icon(Bootstrap.basket_fill),
-            label: '',
+          CustomBottomNavItem(
+            icon: Bootstrap.basket,
+            activeIcon: Bootstrap.basket_fill,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Bootstrap.balloon_heart),
-            activeIcon: Icon(Bootstrap.balloon_heart_fill),
-            label: '',
+          CustomBottomNavItem(
+            icon: Bootstrap.balloon_heart,
+            activeIcon: Bootstrap.balloon_heart_fill,
           ),
         ],
-        selectedItemColor: Theme.of(context)
-            .colorScheme
-            .primary, // Color del ítem seleccionado
-        unselectedItemColor: Colors.grey, // Color de los ítems no seleccionados
       ),
     );
   }

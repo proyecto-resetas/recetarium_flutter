@@ -3,14 +3,15 @@ import 'package:resetas/src/features/user_profile/models/user.dart';
 import 'package:resetas/src/features/auth/models/token_model.dart';
 import 'package:resetas/src/features/user_profile/models/user_model.dart';
 import 'package:resetas/src/features/auth/data/auth_api_service.dart';
-import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:resetas/src/features/auth/models/login_request_model.dart';
+import 'package:resetas/src/core/services/local_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   AccessToken? _accessToken;
   UserResModel? _user;
 
   final AuthApiService _authApiService = AuthApiService();
+  final LocalStorageService _localStorageService = LocalStorageService();
 
   AccessToken? get accessToken => _accessToken;
   UserResModel? get user => _user;
@@ -18,30 +19,11 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _accessToken != null;
 
   Future<void> checkAuthStatus() async {
-    var box = await Hive.openBox('authBox');
-    final token = box.get('access_token');
-    if (token != null) {
+    final token = _localStorageService.token;
+    final userData = _localStorageService.userData;
+    if (token != null && userData != null) {
       _accessToken = AccessToken(accessToken: token);
-      final userId = box.get('userId');
-      final username = box.get('username');
-      final email = box.get('email');
-      final role = box.get('role');
-
-      _user = UserResModel(
-        id: userId ?? '',
-        username: username ?? '',
-        lastname: '',
-        email: email ?? '',
-        phone: '',
-        country: '',
-        city: '',
-        photoUrl: '',
-        role: role ?? 'user',
-        myFavorite: [],
-        myRecipe: [],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      _user = UserResModel.fromJsonModel(userData);
       notifyListeners();
     }
   }
@@ -51,7 +33,8 @@ class AuthProvider extends ChangeNotifier {
       final success = await _authApiService.login(loginRequestModel);
       return success;
     } catch (e) {
-      throw ('Error durante el login: $e');
+      // Feedback discreto
+      return false;
     }
   }
 
@@ -61,16 +44,14 @@ class AuthProvider extends ChangeNotifier {
         user.role = 'admin';
       }
 
-      final authResponse = await _authApiService.register(user);
-      _accessToken = authResponse.accessToken;
-      _user = authResponse.userResModel;
-      if (_accessToken != null) {
-        await _saveAuthDataToHive(_accessToken!.accessToken, _user!);
-        notifyListeners();
+      final success = await _authApiService.register(user);
+      if (success) {
         return true;
+      } else {
+        return false;
       }
-      return false;
     } catch (e) {
+      // Feedback discreto
       return false;
     }
   }
@@ -90,8 +71,6 @@ class AuthProvider extends ChangeNotifier {
           city: '', 
           photoUrl: '', 
           role: data['role'] ?? 'user',
-          myFavorite: [],
-          myRecipe: [],
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -99,6 +78,8 @@ class AuthProvider extends ChangeNotifier {
         final token = data['access_token'] ?? '';
         _accessToken = AccessToken(accessToken: token);
         _user = userResModel;
+
+        
 
         await _saveAuthDataToHive(token, userResModel);
         notifyListeners();
@@ -111,12 +92,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _saveAuthDataToHive(String token, UserResModel user) async {
-    var box = await Hive.openBox('authBox');
-    await box.put('access_token', token);
-    await box.put('userId', user.id);
-    await box.put('username', user.username);
-    await box.put('email', user.email);
-    await box.put('role', user.role);
+    await _localStorageService.saveAuthData(
+      token: token,
+      userData: user.toJson(),
+    );
   }
 
   Future<bool> resendOtp(String email) async {
@@ -129,14 +108,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void logout() async {
-      if (_accessToken != null) {
-        await _authApiService.logout(_accessToken!.accessToken);
-        }
-      _accessToken = null;
-      _user = null;
-      var box = await Hive.openBox('authBox');
-      await box.clear();
-      notifyListeners();
-    
+    if (_accessToken != null) {
+      await _authApiService.logout(_accessToken!.accessToken);
+    }
+    _accessToken = null;
+    _user = null;
+    await _localStorageService.clearAuthData();
+    notifyListeners();
   }
 }

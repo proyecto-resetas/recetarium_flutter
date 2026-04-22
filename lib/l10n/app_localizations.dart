@@ -314,6 +314,30 @@ abstract class AppLocalizations {
   /// **'Registration failed'**
   String get registrationFailed;
 
+  /// No description provided for @firstNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. John'**
+  String get firstNameHint;
+
+  /// No description provided for @lastNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Smith'**
+  String get lastNameHint;
+
+  /// No description provided for @emailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'your@email.com'**
+  String get emailHint;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'........'**
+  String get passwordHint;
+
   /// No description provided for @or.
   ///
   /// In en, this message translates to:

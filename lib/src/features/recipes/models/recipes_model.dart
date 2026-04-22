@@ -6,27 +6,39 @@ class RecipesModel {
   final String? id;
   final String nameRecipe;
   final String descriptionRecipe;
-  final List<Ingredients> ingredientsRecipe;
+  final List<Ingredients>? ingredientsRecipe;
   final String? imageUrl;
   final num price;
   final String level;
   final String category;
-  final String createdBy;
-  final List<Utensils> utensilRecipe; 
-  final List<Steps> steps; 
+  final dynamic createdBy;
+  final List<Utensils>? utensilRecipe;
+  final List<Steps>? steps;
+
+  String get creatorDisplayName {
+    if (createdBy == null) return 'Anónimo';
+    if (createdBy is String) return createdBy as String;
+    if (createdBy is Map) {
+      final username = createdBy['username'] ?? '';
+      final lastname = createdBy['lastname'] ?? '';
+      final fullName = '$username $lastname'.trim();
+      return fullName.isEmpty ? 'Anónimo' : fullName;
+    }
+    return 'Anónimo';
+  }
 
   RecipesModel({
   this.id,
   required this.nameRecipe,
   required this.descriptionRecipe,
-  required this.ingredientsRecipe,
+  this.ingredientsRecipe,
   this.imageUrl,
   required this.price,
   required this.level,
   required this.category,
-  required this.createdBy,
-  required this.utensilRecipe,  
-  required this.steps,
+  this.createdBy,
+  this.utensilRecipe,  
+  this.steps,
 
   });
 
@@ -46,7 +58,7 @@ class RecipesModel {
         price: json["price"] ?? 0,
         level: json["level"] ?? '',
         category: json["category"] ?? '',
-        createdBy: json["createdBy"] ?? '',
+        createdBy: json['createdBy'] != null ? json['createdBy'] as Map<String, dynamic> : null,
         utensilRecipe: json['utensilRecipe'] != null
           ? (json['utensilRecipe'] as List)
               .map((utensilJson) => Utensils.fromJson(utensilJson))

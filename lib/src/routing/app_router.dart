@@ -10,7 +10,7 @@ import 'package:resetas/src/features/auth/ui/otp_verification_screen.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/recipes/ui/recipes_details.screen.dart';
-
+import 'package:resetas/src/features/recipes/ui/ingredients_utensil.dart';
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
     return GoRouter(
@@ -67,6 +67,13 @@ class AppRouter {
         GoRoute(
           path: '/ensayo',
           builder: (context, state) => PaymentScreen(),
+        ),
+        GoRoute(
+          path: '/ingredients_utensil',
+          builder: (context, state) {
+              final recipe = state.extra as RecipesModel;
+              return IngredientsUtensil(recipe: recipe);
+          },
         ),
         GoRoute(
           path: '/otp_verification',
