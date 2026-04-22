@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/src/core/widgets/custom_main_button.dart';
@@ -21,6 +22,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Configurar el escucha de teclas directamente en el FocusNode para evitar conflictos
+    for (int i = 0; i < 6; i++) {
+      _focusNodes[i].onKeyEvent = (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace &&
+            _controllers[i].text.isEmpty &&
+            i > 0) {
+          _focusNodes[i - 1].requestFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      };
+    }
+  }
+
+  @override
   void dispose() {
     for (var controller in _controllers) {
       controller.dispose();
@@ -32,10 +51,44 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   void _onOtpChanged(String value, int index) {
-    if (value.isNotEmpty && index < 5) {
-      _focusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
+    if (value.length > 1) {
+      // Manejar el pegado (paste) de un código completo
+      String pastedCode = value.trim();
+      // Eliminar cualquier carácter que no sea un dígito
+      pastedCode = pastedCode.replaceAll(RegExp(r'[^0-9]'), '');
+      
+      if (pastedCode.length > 6) pastedCode = pastedCode.substring(0, 6);
+
+      for (int i = 0; i < pastedCode.length; i++) {
+        if (index + i < 6) {
+          _controllers[index + i].text = pastedCode[i];
+        }
+      }
+
+      // Mover el foco al último campo llenado o al final
+      int nextFocusIndex = (index + pastedCode.length < 6)
+          ? index + pastedCode.length
+          : 5;
+      _focusNodes[nextFocusIndex].requestFocus();
+
+      // Si se pegaron 6 dígitos o se completó el total, intentar verificar automáticamente
+      final fullOtp = _controllers.map((c) => c.text).join();
+      if (fullOtp.length == 6) {
+        _verifyOtp();
+      }
+      return;
+    }
+
+    if (value.isNotEmpty) {
+      if (index < 5) {
+        _focusNodes[index + 1].requestFocus();
+      } else {
+        // Si es el último dígito y se completaron los 6, verificar
+        final fullOtp = _controllers.map((c) => c.text).join();
+        if (fullOtp.length == 6) {
+          _verifyOtp();
+        }
+      }
     }
   }
 
@@ -61,8 +114,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.accountVerifiedSuccess)),
         );
-        // Redirigir a la ruta de home
-        context.go('/home');
+
+        if (authProvider.user?.role == 'admin') {
+          context.go('/admin_home');
+        } else {
+          context.go('/home');
+        }
       }
     } else {
       if (mounted) {
@@ -162,49 +219,51 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   children: [
                     TextSpan(text: l10n.verifyOtpSubtitle),
                     TextSpan(
-                      text: '',
+                      text: widget.email,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.primary.withAlpha(80),
+                        color: colorScheme.primary,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 40),
-              // OTP Fields
+              // OTP Fields con Flexible para evitar overflow
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(
                   6,
-                  (index) => SizedBox(
-                    width: 45,
-                    child: TextField(
-                      controller: _controllers[index],
-                      focusNode: _focusNodes[index],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      maxLength: 1,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: Colors.grey.shade300,
-                            width: 2,
+                  (index) => Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: TextField(
+                        controller: _controllers[index],
+                        focusNode: _focusNodes[index],
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 6, // Permitir más para manejar el pegado
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 2,
+                            ),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                         ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
+                        onChanged: (value) => _onOtpChanged(value, index),
                       ),
-                      onChanged: (value) => _onOtpChanged(value, index),
                     ),
                   ),
                 ),

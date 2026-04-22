@@ -39,11 +39,17 @@ flutter run
 
 El proyecto está organizado siguiendo principios de arquitectura limpia y basada en características:
 
-- **`lib/src/features/`**: Contiene la lógica de negocio y UI dividida por módulos (Auth, Recipes, Shopping Cart, User Profile).
-- **`lib/src/core/`**: Centraliza configuraciones, temas globales (`AppTheme`), widgets reutilizables y el cliente base de API (`RecetasAPI`).
+- **`lib/src/features/`**: Contiene la lógica de negocio y UI dividida por módulos (Auth, Recipes, Shopping Cart, User Profile). Cada módulo tiene sus propios servicios API (ej. `RecipesApiService`, `AuthApiService`).
+- **`lib/src/core/`**: Centraliza configuraciones, temas globales (`AppTheme`), widgets reutilizables y utilidades base.
 - **`lib/src/routing/`**: Define las rutas de navegación utilizando `go_router`.
 
 ## Funcionalidades Recientes
+
+### Gestión de Recetas
+Se ha modularizado la gestión de recetas:
+- **Servicio API**: `lib/src/features/recipes/data/recipes_api_service.dart`.
+- **Modelos**: `lib/src/features/recipes/models/`.
+- **Integración**: Manejado a través de `ViewRecipesProvider`, `RecipeMyCreatedProvider`, etc.
 
 ### Autenticación con OTP
 Se ha implementado un flujo de verificación de cuenta mediante código de 6 dígitos:

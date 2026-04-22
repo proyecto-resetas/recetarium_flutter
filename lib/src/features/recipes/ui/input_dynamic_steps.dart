@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/theme/app_input_style.dart';
+import 'package:resetas/src/core/widgets/custom_icon_input.dart';
+import 'package:resetas/src/core/widgets/custom_main_button.dart';
 import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
 
 class CreateDynamicInputs extends StatefulWidget {
@@ -18,8 +19,20 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
   @override
   void initState() {
     super.initState();
-    _controllersD.add(TextEditingController()); // Agregamos un controlador por defecto
-    _controllersT.add(TextEditingController()); // Agregamos un controlador por defecto
+    final viewRecipesProvider =
+        Provider.of<ViewRecipesProvider>(context, listen: false);
+
+    // Cargar pasos existentes si los hay
+    if (viewRecipesProvider.steps.isNotEmpty) {
+      for (var step in viewRecipesProvider.steps) {
+        _controllersD
+            .add(TextEditingController(text: step['description'] ?? ''));
+        _controllersT.add(TextEditingController(text: step['time'] ?? ''));
+      }
+    } else {
+      _controllersD.add(TextEditingController());
+      _controllersT.add(TextEditingController());
+    }
   }
 
   // Función para agregar un nuevo input dinámico
@@ -34,6 +47,7 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
   void _saveStepsToGlobalState(BuildContext context) {
     final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context, listen: false);
 
+    viewRecipesProvider.clearSteps();
     for (int i = 0; i < _controllersD.length; i++) {
       String description = _controllersD[i].text;
       String time = _controllersT[i].text;
@@ -70,66 +84,82 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Container(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Column(
           children: [
             Expanded(
               child: ListView.builder(
                 itemCount: _controllersD.length,
+                padding: EdgeInsets.zero,
                 itemBuilder: (context, index) {
-                  return Column(
-                    children: [
-                      TextFormField(
-                        controller: _controllersD[index],
-                        decoration: InputStyles.inputDecoration(
-                          labelText: 'Step ${index + 1}, description',
-                        ),
-                         validator: (value) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 15.0),
+                    child: Column(
+                      children: [
+                        CustomIconInput(
+                          controller: _controllersD[index],
+                          hintText: 'Step ${index + 1} description',
+                          prefixIcon: Icons.format_list_numbered_rounded,
+                          maxLines: 2,
+                          validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter the description';
                             }
                             return null;
                           },
-                      ),
-                      const SizedBox(height: 10,),
-                      TextFormField(
-                        controller: _controllersT[index],
-                        decoration:  InputStyles.inputDecoration(
-                          labelText: 'Time, Example 1m, 2s, 3h',    
                         ),
-                        keyboardType: TextInputType.text,
-                        validator: (value) {
+                        const SizedBox(height: 10),
+                        CustomIconInput(
+                          controller: _controllersT[index],
+                          hintText: 'Time (e.g. 1h 30m, 15m, 45s)',
+                          prefixIcon: Icons.timer_outlined,
+                          keyboardType: TextInputType.text,
+                          validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter the Time';
                             }
                             return null;
                           },
-                      ),
-                      const SizedBox(height: 10,),
-                    ],
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
             ),
+            const SizedBox(height: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: _addInput, // Llama a la función para agregar nuevos inputs
-                  child: const Text('Add Steps'),
+                Expanded(
+                  child: CustomMainButton(
+                    text: 'Add Step',
+                    icon: Icons.add_circle_outline_rounded,
+                    height: 45,
+                    color: colorScheme.secondary,
+                    onPressed: _addInput,
+                  ),
                 ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-              onPressed: () {
-                _saveStepsToGlobalState(context); // Guarda los valores en el estado global
-                print(Provider.of<ViewRecipesProvider>(context, listen: false).steps); // Muestra los valores guardados
-              },
-              child: const Text('Guardar Steps'),
-            ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: CustomMainButton(
+                    text: 'Save Steps',
+                    icon: Icons.save_rounded,
+                    height: 45,
+                    onPressed: () {
+                      _saveStepsToGlobalState(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Steps saved locally')),
+                      );
+                    },
+                  ),
+                ),
               ],
-            ),         
+            ),
           ],
         ),
       ),

@@ -7,10 +7,10 @@ class Config {
 
   static String get apiUrl {
     if (kIsWeb) {
-      return env.Env.apiUrlProd;
+      return env.Env.apiUrlDev;
     }
     if (Platform.isAndroid) {
-      return env.Env.apiUrlLocal;
+      return env.Env.apiUrlDev;
     } else if (Platform.isIOS) {
       return env.Env.apiUrlDev;
     } else if (Platform.isMacOS) {
@@ -18,5 +18,13 @@ class Config {
     } else {
       throw Exception('Plataforma no soportada');
     }
+  }
+
+  static String get xapikey {
+    return env.Env.xapikey;
+  }
+
+  static String get aiProvider {
+    return env.Env.aiProvider;
   }
 }

@@ -111,7 +111,7 @@ class MyProfileScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: StatCard(
-                      value: user.myRecipe.length.toString(),
+                      value: user.myRecipe?.length.toString() ?? '0',
                       label: l10n.recipes,
                     ),
                   ),

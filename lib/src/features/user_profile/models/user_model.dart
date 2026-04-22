@@ -10,8 +10,8 @@ class UserResModel {
   final String city;
   final String photoUrl;
   final String role;
-  final List<BookRecipe> myFavorite;
-  final List<BookRecipe> myRecipe;
+  final List<BookRecipe>? myFavorite;
+  final List<BookRecipe>? myRecipe;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -25,8 +25,8 @@ class UserResModel {
     required this.city,
     required this.photoUrl,
     required this.role,
-    required this.myFavorite,
-    required this.myRecipe,
+    this.myFavorite,
+    this.myRecipe,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -62,5 +62,23 @@ class UserResModel {
           ? DateTime.parse(json['updatedAt'] as String)
           : DateTime.now(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'lastname': lastname,
+      'email': email,
+      'phone': phone,
+      'country': country,
+      'city': city,
+      'photoUrl': photoUrl,
+      'role': role,
+      'myFavorite': myFavorite?.map((item) => item.toJson()).toList(),
+      'myRecipe': myRecipe?.map((item) => item.toJson()).toList(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
   }
 }

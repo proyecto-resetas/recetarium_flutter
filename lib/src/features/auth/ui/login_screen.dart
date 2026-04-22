@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/core/widgets/custom_text_field.dart';
+import 'package:resetas/src/core/widgets/custom_icon_input.dart';
 import 'package:resetas/src/core/widgets/custom_main_button.dart';
 import 'package:resetas/l10n/app_localizations.dart';
 import 'package:resetas/src/features/auth/models/login_request_model.dart';
@@ -65,29 +65,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    CustomTextField(
+                    CustomIconInput(
                       controller: emailController,
                       label: l10n.email,
-                      hintText: 'tu@email.com',
+                      hintText: l10n.emailHint,
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Por favor, ingresa tu email';
+                          return l10n.pleaseEnterEmail;
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 20),
-                    CustomTextField(
+                    CustomIconInput(
                       controller: passwordController,
                       label: l10n.password,
-                      hintText: '........',
+                      hintText: l10n.passwordHint,
                       prefixIcon: Icons.lock_outline,
                       isPassword: true,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Por favor, ingresa tu contraseña';
+                          return l10n.pleaseEnterPassword;
                         }
                         return null;
                       },

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/src/features/user_profile/models/user.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/core/widgets/custom_text_field.dart';
+import 'package:resetas/src/core/widgets/custom_icon_input.dart';
+import 'package:resetas/src/core/widgets/custom_select_field.dart';
 import 'package:resetas/src/core/widgets/custom_main_button.dart';
 import 'package:resetas/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -106,10 +107,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        CustomTextField(
+                        CustomIconInput(
                           controller: firstNameController,
                           label: l10n.fullName,
-                          hintText: 'Ej. Juan',
+                          hintText: l10n.firstNameHint,
                           prefixIcon: Icons.person_outline,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -119,10 +120,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        CustomTextField(
+                        CustomIconInput(
                           controller: lastNameController,
                           label: l10n.lastName,
-                          hintText: 'Ej. Pérez',
+                          hintText: l10n.lastNameHint,
                           prefixIcon: Icons.person_outline,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -132,10 +133,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        CustomTextField(
+                        CustomIconInput(
                           controller: emailController,
                           label: l10n.email,
-                          hintText: 'tu@email.com',
+                          hintText: l10n.emailHint,
                           prefixIcon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
@@ -146,10 +147,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        CustomTextField(
+                        CustomIconInput(
                           controller: passwordController,
                           label: l10n.password,
-                          hintText: '........',
+                          hintText: l10n.passwordHint,
                           prefixIcon: Icons.lock_outline,
                           isPassword: true,
                           validator: (value) {
@@ -160,10 +161,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-                        CustomTextField(
+                        CustomIconInput(
                           controller: confirmPasswordController,
                           label: l10n.confirmPassword,
-                          hintText: '........',
+                          hintText: l10n.passwordHint,
                           prefixIcon: Icons.shield_outlined,
                           isPassword: true,
                           validator: (value) {
@@ -175,49 +176,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 20),
                         // Role Selection Dropdown
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.whoDoYouWantToBe,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E1E1E),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedRole,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 15),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xFFE0E0E0)),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xFFE0E0E0)),
-                                ),
-                              ),
-                              items: ['user', 'chef'].map((String role) {
-                                return DropdownMenuItem<String>(
-                                  value: role,
-                                  child: Text(role.toUpperCase()),
-                                );
-                              }).toList(),
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _selectedRole = newValue;
-                                });
-                              },
-                            ),
-                          ],
+                        CustomSelectField<String>(
+                          value: _selectedRole,
+                          label: l10n.whoDoYouWantToBe,
+                          hintText: 'Selecciona tu rol',
+                          prefixIcon: Icons.person_search_rounded,
+                          items: ['user', 'chef'].map((String role) {
+                            return DropdownMenuItem<String>(
+                              value: role,
+                              child: Text(role.toUpperCase()),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedRole = newValue;
+                            });
+                          },
                         ),
                         const SizedBox(height: 20),
                         // Terms checkbox
@@ -272,13 +246,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                               if (success) {
                                 if (mounted) {
-                                  if (authProvider.user?.role == 'admin') {
-                                    Navigator.pushReplacementNamed(
-                                        context, '/admin_home');
-                                  } else {
-                                    Navigator.pushReplacementNamed(
-                                        context, '/home');
-                                  }
+                                  // Redirigir a la pantalla de verificación de OTP
+                                  context.push('/otp_verification',
+                                      extra: emailController.text.trim());
                                 }
                               } else {
                                 if (mounted) {

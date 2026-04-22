@@ -1,0 +1,8 @@
+curl -X 'POST' \
+  'http://localhost:3000/Recipes/analyze-image' \
+  -H 'accept: /' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWRlZWVjYzNmMDQyNzlkYzNlNmI0MWQiLCJ1c2VybmFtZSI6IkRBTSIsInJvbGUiOiJhZG1pbiIsImp0aSI6IjIzZWU1YWJiMjMwYjc1OTQ4ZGQzYzEwM2VmZWM0ODJhOTRhMzdkYzVmZWY3YmUwOTQ0OGJkYmUyNWY4NjhmMmMiLCJpYXQiOjE3NzY3ODY0NDgsImV4cCI6MTc3Njg3Mjg0OH0.etp7crLQFbnDIBkZ9IlZ4GwtIY0OZiCt9y2m_WGUTbM' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'image=@WhatsApp Image 2026-04-21 at 10.53.57 AM.jpeg;type=image/jpeg' \
+  -F 'prompt=' \
+  -F 'provider=ollama'

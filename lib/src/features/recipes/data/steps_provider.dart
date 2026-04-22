@@ -1,71 +1,45 @@
-//import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
+import 'package:resetas/src/core/services/local_storage_service.dart';
+import 'package:resetas/src/features/recipes/models/steps_model.dart';
 
 class StepsProvider with ChangeNotifier {
-  // int currentPage = 0;
-  // Timer? _timer;
+  final RecipesApiService _recipesApiService = RecipesApiService();
+  final LocalStorageService _localStorageService = LocalStorageService();
 
-  // int _timeInMilliseconds = 0;
+  List<Steps> _steps = [];
+  bool _isLoading = false;
 
-  // set timeInMilliseconds(int value) {
-  //   // forma para entrar a una propiedad de la clase con restriccion, con la linea 4
+  List<Steps> get steps => _steps;
+  bool get isLoading => _isLoading;
 
-  //   if (value < 0) throw 'value have must be >=0';
+  Future<void> fetchSteps(String recipeId) async {
+    _isLoading = true;
+    notifyListeners();
 
-  //   _timeInMilliseconds = value;
-  // }
+    final token = _localStorageService.token;
+    if (token == null) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
 
-  // // Iniciar auto-slide
-  // void startAutoSlide(PageController controller, int totalPages) {
-  //   _timer?.cancel(); // Cancelar cualquier temporizador anterior
+    try {
+      final List<dynamic> data = await _recipesApiService.getRecipeSteps(recipeId, token);
+      _steps = data.map((stepJson) => Steps.fromJson(stepJson)).toList();
+      print('Steps cargados: ${_steps.length}');
+      print('Steps: ${_steps}');
+    } catch (e) {
+      print('Error en fetchSteps: $e');
+      _steps = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
-  //   _timer =
-  //       Timer.periodic(Duration(milliseconds: _timeInMilliseconds), (timer) {
-  //     if (currentPage < totalPages - 1) {
-       
-  //       currentPage++;
-  //       controller.animateToPage(
-  //         currentPage,
-  //         duration: const Duration(milliseconds: 1000),
-  //         curve: Curves.easeInOut,
-  //       );
-  //     } else {
-  //       timer.cancel();
-  //     }
-  //     notifyListeners();
-  //   });
-  // }
-
-  // // Pausar el auto-slide
-  // void pauseAutoSlide() {
-  //   _timer?.cancel();
-  // }
-
-  // // Reiniciar el auto-slide
-  // void resetAutoSlide(PageController controller) {
-  //   currentPage = 0;
-  //   controller.jumpToPage(0);
-  //   notifyListeners();
-  //   startAutoSlide(controller,
-  //       controller.positions.length); // Reiniciar desde la primera página
-  // }
-
-  // void setCurrentPage(int page) {
-  //   currentPage = page;
-  //   notifyListeners();
-  // }
-
-  // @override
-  // void dispose() {
-  //   _timer?.cancel();
-  //   super.dispose();
-  // }
-
-  // // Reinicia el contador al salir de la pantalla
-  // void resetSlide() {
-  //   currentPage = 0;
-  //   _timer?.cancel();
-  //   notifyListeners();
-  // }
+  void clearSteps() {
+    _steps = [];
+    notifyListeners();
+  }
 }
-

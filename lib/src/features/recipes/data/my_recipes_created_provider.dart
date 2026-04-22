@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/core/api/get_api_recetas.dart';
+import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
 //import 'package:resetas/src/features/recipes/models/book_recipe_model.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/user_profile/models/user_model.dart';
 
+import 'package:resetas/src/core/services/local_storage_service.dart';
+
 class RecipeMyCreatedProvider extends ChangeNotifier {
 
-  final RecetasAPI recetasAPI = RecetasAPI();
+  final RecipesApiService recetasAPI = RecipesApiService();
+  final LocalStorageService _localStorageService = LocalStorageService();
   final List<RecipesModel> _myRecipeList = [];
   UserResModel? recipeRes;
 
-  //BookRecipe? _addFavoriteRecipe;
   List<RecipesModel> get myRecipeList => _myRecipeList;
 
-   //get addFavoriteRecipe => _addFavoriteRecipe;
-
   Future<void> getMyRecipesCreated(UserResModel? user) async {
-
     try {
-final recipes = await recetasAPI.getRecipesProperty(user!.id, type: 'myRecipes');
+      final userId = user?.id ?? _localStorageService.userData?['id'];
+      if (userId == null) return;
 
+      final recipes = await recetasAPI.getRecipesProperty(userId, type: 'myRecipes');
       _myRecipeList.clear(); 
       _myRecipeList.addAll(recipes); 
       notifyListeners();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:resetas/src/core/widgets/custom_icon_input.dart';
 import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
@@ -39,13 +40,13 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
   }
 
   void _applyFilters(ViewRecipesProvider provider) {
-    provider.clearListRecipe();
     provider.getRecipeFilter(
-      _selectedCategory,
-      _selectedLevel,
       _searchController.text.trim().isEmpty
           ? null
           : _searchController.text.trim(),
+      _selectedCategory,
+      _selectedLevel,
+      null, // createdBy
     );
   }
 
@@ -65,37 +66,25 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors.secondary.withAlpha(10),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => _applyFilters(provider),
-                    decoration: InputDecoration(
-                      hintText: 'Buscar receta o chef…',
-                      hintStyle:
-                          TextStyle(color: colors.onSurface.withAlpha(45)),
-                      prefixIcon: Icon(Icons.search_rounded,
-                          color: colors.secondary, size: 22),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 20),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {});
-                                _applyFilters(provider);
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14, horizontal: 4),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
+                child: CustomIconInput(
+                  controller: _searchController,
+                  hintText: 'Buscar receta o chef…',
+                  prefixIcon: Icons.search_rounded,
+                  textInputAction: TextInputAction.search,
+                  onCleared: () {
+                    _searchController.clear();
+                    _applyFilters(provider);
+                    setState(() {});
+                  },
+                  onChanged: (value) {
+                    provider.progressiveSearch(
+                      value,
+                      _selectedCategory,
+                      _selectedLevel,
+                    );
+                    setState(() {});
+                  },
+                  onSubmitted: (_) => _applyFilters(provider),
                 ),
               ),
               const SizedBox(width: 10),
@@ -216,7 +205,7 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
               ? _buildEmptyState(colors)
               : GridView.builder(
                   controller: provider.recipeScrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
                     mainAxisSpacing: 14,
@@ -384,7 +373,7 @@ class _RecipeGridCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Expanded(
                           child: Text(
-                            recipe.createdBy,
+                            recipe.creatorDisplayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

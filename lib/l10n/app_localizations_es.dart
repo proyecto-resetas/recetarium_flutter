@@ -119,6 +119,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get registrationFailed => 'Registro fallido';
 
   @override
+  String get firstNameHint => 'Ej. Juan';
+
+  @override
+  String get lastNameHint => 'Ej. Pérez';
+
+  @override
+  String get emailHint => 'tu@email.com';
+
+  @override
+  String get passwordHint => '........';
+
+  @override
   String get or => 'o';
 
   @override
