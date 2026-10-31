@@ -27,7 +27,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       case 1:
         return const ExploreRecipesScreen();
       case 2:
-        return const BookRecipes();
+        return BookRecipes(
+          onCreateRecipeTap: () => _onItemTapped(0),
+        );
       default:
         throw UnimplementedError('No widget for $selectedIndexButtom');
     }
