@@ -17,12 +17,22 @@ class RecipeMyCreatedProvider extends ChangeNotifier {
 
   Future<void> getMyRecipesCreated(UserResModel? user) async {
     try {
-      final userId = user?.id ?? _localStorageService.userData?['id'];
-      if (userId == null) return;
+      final userId = user?.id ?? _localStorageService.userData?['id'] ?? '';
 
-      final recipes = await recetasAPI.getRecipesProperty(userId, type: 'myRecipes');
-      _myRecipeList.clear(); 
-      _myRecipeList.addAll(recipes); 
+      final createdRecipes =
+          await recetasAPI.getRecipesProperty(userId, type: 'created');
+      final myRecipes =
+          await recetasAPI.getRecipesProperty(userId, type: 'myRecipes');
+
+      final Map<String, RecipesModel> combined = {};
+      for (final r in [...createdRecipes, ...myRecipes]) {
+        final key = r.id ?? r.nameRecipe;
+        combined[key] = r;
+      }
+
+      _myRecipeList
+        ..clear()
+        ..addAll(combined.values);
       notifyListeners();
     } catch (e) {
       notifyListeners();

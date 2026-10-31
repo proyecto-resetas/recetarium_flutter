@@ -2,6 +2,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:resetas/src/core/config/config.dart';
+import 'package:resetas/src/core/services/local_storage_service.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/recipes/models/image_s3_model.dart';
 import 'package:resetas/src/features/recipes/models/book_recipe_model.dart';
@@ -10,6 +11,7 @@ import 'package:resetas/src/features/user_profile/models/user_model.dart';
 
 class RecipesApiService {
   late final Dio _dio;
+  final LocalStorageService _localStorageService = LocalStorageService();
 
   RecipesApiService() {
     _dio = Dio(
@@ -21,6 +23,21 @@ class RecipesApiService {
     );
 
     _dio.options.headers['x-api-key'] = Config.xapikey;
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          options.headers['x-api-key'] ??= Config.xapikey;
+          final currentAuth = options.headers['Authorization']?.toString() ?? '';
+          if (currentAuth.isEmpty || currentAuth == 'Bearer null') {
+            final token = _localStorageService.token;
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+          }
+          return handler.next(options);
+        },
+      ),
+    );
   }
 
   // Obtener todas las recetas
@@ -137,8 +154,9 @@ class RecipesApiService {
   Future<UserResModel> addRecipeFavorite(
       String userId, BookRecipe recipeFavorite) async {
     try {
+      final recipeId = recipeFavorite.idRecipe ?? userId;
       final response = await _dio.post(
-        '/users/favorite-recipe/$userId',
+        '/users/favorite-recipe/$recipeId',
         data: recipeFavorite.toJson(),
         options: Options(
           headers: {
@@ -147,7 +165,7 @@ class RecipesApiService {
         ),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         return UserResModel.fromJsonModel(response.data);
       } else {
         throw Exception('Error al agregar a favoritos: ${response.statusCode}');
@@ -157,66 +175,88 @@ class RecipesApiService {
     }
   }
 
+  // Eliminar receta de favoritos
+  Future<bool> removeRecipeFavorite(String recipeId) async {
+    try {
+      final response = await _dio.delete(
+        '/users/favorite-recipe/$recipeId',
+        options: Options(
+          headers: {
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Comprar una receta y almacenarla en myPurchased del usuario autenticado
+  Future<RecipesModel?> purchaseRecipe(
+    String recipeId, {
+    String? paymentReference,
+    String? recipientEmail,
+  }) async {
+    try {
+      final Map<String, dynamic> body = {};
+      if (paymentReference != null && paymentReference.isNotEmpty) {
+        body['paymentReference'] = paymentReference;
+      }
+      if (recipientEmail != null && recipientEmail.isNotEmpty) {
+        body['recipientEmail'] = recipientEmail;
+      }
+
+      final response = await _dio.post(
+        '/Recipes/purchase/$recipeId',
+        data: body.isEmpty ? null : body,
+        options: Options(
+          headers: {
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = response.data;
+        if (data is Map && data['recipe'] is Map<String, dynamic>) {
+          return RecipesModel.fromJsonModel(data['recipe']);
+        } else if (data is Map<String, dynamic>) {
+          return RecipesModel.fromJsonModel(data);
+        }
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Error al comprar receta: $e');
+    }
+  }
+
   // Obtener recetas favoritas de un usuario
-  Future<List<RecipesModel>> getFavoriteRecipes(String userId) async {
-    try {
-      final response = await _dio.get(
-        '/Recipes/favorites/$userId',
-        options: Options(
-          headers: {
-            'x-api-key': Config.xapikey,
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['recipes'];
-        return data
-            .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
-            .toList();
-      } else {
-        throw Exception('Error al obtener favoritas');
-      }
-    } catch (e) {
-      return [];
-    }
+  Future<List<RecipesModel>> getFavoriteRecipes([String? userId]) async {
+    return getRecipesProperty(userId ?? '', type: 'favorite');
   }
 
-  // Obtener recetas creadas por un usuario
-  Future<List<RecipesModel>> getMyRecipes(String userId) async {
-    try {
-      final response = await _dio.get(
-        '/Recipes/myRecipes/$userId',
-        options: Options(
-          headers: {
-            'x-api-key': Config.xapikey,
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['recipes'];
-        return data
-            .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
-            .toList();
-      } else {
-        throw Exception('Error al obtener mis recetas');
-      }
-    } catch (e) {
-      return [];
-    }
+  // Obtener recetas de un usuario
+  Future<List<RecipesModel>> getMyRecipes([String? userId]) async {
+    return getRecipesProperty(userId ?? '', type: 'myRecipes');
   }
 
-  // Genérico para obtener recetas por propiedad (favorite o myRecipes)
+  // Obtener recetas compradas del usuario autenticado
+  Future<List<RecipesModel>> getPurchasedRecipes([String? userId]) async {
+    return getRecipesProperty(userId ?? '', type: 'purchased');
+  }
+
+  // Genérico para obtener recetas por tipo (favorite, myRecipes, purchased, created)
   Future<List<RecipesModel>> getRecipesProperty(String userId,
       {required String type}) async {
     try {
-      if (!['favorite', 'myRecipes'].contains(type)) {
-        throw ArgumentError('Invalid type. Must be "favorite" or "myRecipes".');
+      if (!['favorite', 'myRecipes', 'purchased', 'created'].contains(type)) {
+        throw ArgumentError(
+            'Invalid type. Must be "favorite", "myRecipes", "purchased" or "created".');
       }
 
       final response = await _dio.get(
-        '/Recipes/$type/$userId',
+        '/Recipes/my-list/$type',
         options: Options(
           headers: {
             'x-api-key': Config.xapikey,
@@ -225,8 +265,14 @@ class RecipesApiService {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['recipes'];
+        final rawData = response.data;
+        final List<dynamic> data = rawData is List
+            ? rawData
+            : (rawData is Map && rawData['recipes'] is List
+                ? rawData['recipes'] as List<dynamic>
+                : []);
         return data
+            .whereType<Map<String, dynamic>>()
             .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
             .toList();
       } else {

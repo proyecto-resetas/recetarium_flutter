@@ -9,6 +9,7 @@ void main() async {
   final localStorageService = LocalStorageService();
   await localStorageService.init();
 
+  debugPrint('🌐 Recetarium corriendo en: ${Uri.base.origin}');
   runApp(const MyApp());
 }
 

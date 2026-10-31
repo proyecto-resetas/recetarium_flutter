@@ -28,27 +28,41 @@ class RecipeFavoriteProvider extends ChangeNotifier {
         nameRecipe: recipeFavorite.nameRecipe,
       );
 
-      final recipeResponse = await recetasAPI.addRecipeFavorite(effectiveUserId, addFavoriteRecipe);
+      final recipeResponse =
+          await recetasAPI.addRecipeFavorite(effectiveUserId, addFavoriteRecipe);
 
       recipeRes = recipeResponse;
-      if(recipeRes != null){
+      if (recipeRes != null) {
+        if (!_favoriteList.any((r) => r.id == recipeFavorite.id)) {
+          _favoriteList.add(recipeFavorite);
+        }
         notifyListeners();
-        return true; 
+        return true;
       }
-      return false; 
+      return false;
     } catch (e) {
-      return false; 
+      return false;
     }
+  }
+
+  Future<bool> removeFavorite(RecipesModel recipe) async {
+    if (recipe.id == null) return false;
+    final removed = await recetasAPI.removeRecipeFavorite(recipe.id!);
+    if (removed) {
+      _favoriteList.removeWhere((r) => r.id == recipe.id);
+      notifyListeners();
+    }
+    return removed;
   }
 
   Future<void> getFavorites(UserResModel? user) async {
     try {
-      final userId = user?.id ?? _localStorageService.userData?['id'];
-      if (userId == null) return;
+      final userId = user?.id ?? _localStorageService.userData?['id'] ?? '';
 
-      final recipes = await recetasAPI.getRecipesProperty(userId, type: 'favorite');
-      _favoriteList.clear(); 
-      _favoriteList.addAll(recipes); 
+      final recipes =
+          await recetasAPI.getRecipesProperty(userId, type: 'favorite');
+      _favoriteList.clear();
+      _favoriteList.addAll(recipes);
       notifyListeners();
     } catch (e) {
       notifyListeners();

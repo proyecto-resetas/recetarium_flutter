@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:go_router/go_router.dart';
+import 'package:resetas/src/core/theme/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
 //import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
@@ -40,7 +41,12 @@ class MyRecipesCreated extends StatelessWidget {
                   itemCount: favorites.length,
                   itemBuilder: (context, index) {
                     final recipe = favorites[index];
-                    return Card(
+                    return GestureDetector(
+                      onTap: () => context.push(
+                        '/recipes_details',
+                        extra: recipe,
+                      ),
+                      child: Card(
                       clipBehavior: Clip.hardEdge,
                       margin: const EdgeInsets.all(10),
                       child: Row(
@@ -96,6 +102,7 @@ class MyRecipesCreated extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
                       ),
                     );
                   },

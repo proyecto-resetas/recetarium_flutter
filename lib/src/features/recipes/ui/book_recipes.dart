@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:resetas/src/core/theme/bootstrap_icons.dart';
 import 'package:resetas/src/features/shopping_cart/ui/my_purchased_recipes.dart';
 import 'package:resetas/src/features/recipes/ui/my_recipes_created.dart';
 import 'package:resetas/src/features/recipes/ui/my_recipes_favorite.dart';

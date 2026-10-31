@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:icons_plus/icons_plus.dart';
+import 'package:resetas/src/core/theme/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:resetas/src/features/auth/data/auth_provider.dart';
+import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
 import 'package:go_router/go_router.dart';
@@ -268,8 +270,24 @@ class RecipeDetailScreen extends StatelessWidget {
                         elevation: 5,
                         shadowColor: const Color(0xFFE53935).withAlpha(40),
                       ),
-                      onPressed: () {
-                        // Implement favorite logic if needed
+                      onPressed: () async {
+                        final favProvider =
+                            context.read<RecipeFavoriteProvider>();
+                        final authProvider = context.read<AuthProvider>();
+                        final messenger = ScaffoldMessenger.of(context);
+                        final added = await favProvider.addFavorite(
+                          recipe,
+                          authProvider.user?.id,
+                        );
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              added
+                                  ? '${recipe.nameRecipe} añadida a favoritos'
+                                  : 'No se pudo añadir a favoritos',
+                            ),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.favorite_rounded),
                       label: const Text(

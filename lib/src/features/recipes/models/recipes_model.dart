@@ -58,14 +58,16 @@ class RecipesModel {
         price: json["price"] ?? 0,
         level: json["level"] ?? '',
         category: json["category"] ?? '',
-        createdBy: json['createdBy'] != null ? json['createdBy'] as Map<String, dynamic> : null,
+        createdBy: json['createdBy'],
         utensilRecipe: json['utensilRecipe'] != null
           ? (json['utensilRecipe'] as List)
+              .whereType<Map<String, dynamic>>()
               .map((utensilJson) => Utensils.fromJson(utensilJson))
               .toList()
           : [],
         steps: json['steps'] != null
           ? (json['steps'] as List)
+              .whereType<Map<String, dynamic>>()
               .map((stepJson) => Steps.fromJson(stepJson))
               .toList()
           : [],
@@ -74,6 +76,7 @@ class RecipesModel {
 
     Map<String, dynamic> toJson() {
     return {
+      if (id != null) '_id': id,
       'nameRecipe': nameRecipe,
       'descriptionRecipe': descriptionRecipe,
       'ingredientsRecipe': ingredientsRecipe,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 //import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
@@ -116,75 +117,94 @@ class MyRecipesFavorites extends StatelessWidget {
               child: Text('Failed to load favorites: ${snapshot.error}'),
             );
           }
-          final favorites = recipeFavoriteProvider.favoriteList;
-          return favorites.isEmpty
-              ? const Center(
-                  child: Text('No recipes in the cart'),
-                )
-              : ListView.builder(
-                  itemCount: favorites.length,
-                  itemBuilder: (context, index) {
-                    final recipe = favorites[index];
-                    return Card(
-                      clipBehavior: Clip.hardEdge,
-                      margin: const EdgeInsets.all(10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 90,
-                            height: 100,
-                            padding: const EdgeInsets.all(10),
-                            child: MyImage(recipe.imageUrl),
+          return Consumer<RecipeFavoriteProvider>(
+            builder: (context, favProvider, _) {
+              final favorites = favProvider.favoriteList;
+              return favorites.isEmpty
+                  ? const Center(
+                      child: Text('No tienes recetas favoritas aún'),
+                    )
+                  : ListView.builder(
+                      itemCount: favorites.length,
+                      itemBuilder: (context, index) {
+                        final recipe = favorites[index];
+                        return GestureDetector(
+                          onTap: () => context.push(
+                            '/recipes_details',
+                            extra: recipe,
                           ),
-                          Expanded(
-                            child: Container(
-                              height: 100,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    recipe.nameRecipe,
-                                    maxLines: 1,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                          child: Card(
+                            clipBehavior: Clip.hardEdge,
+                            margin: const EdgeInsets.all(10),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 90,
+                                  height: 100,
+                                  padding: const EdgeInsets.all(10),
+                                  child: MyImage(recipe.imageUrl),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    height: 100,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 10),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          recipe.nameRecipe,
+                                          maxLines: 1,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        Text(
+                                          recipe.category,
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text('\$${recipe.price.toString()}'),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    recipe.category,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w500,
+                                ),
+                                SizedBox(
+                                  height: 90,
+                                  width: 40,
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.favorite,
+                                      color: Colors.red,
                                     ),
+                                    onPressed: () async {
+                                      final messenger =
+                                          ScaffoldMessenger.of(context);
+                                      await favProvider.removeFavorite(recipe);
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            '${recipe.nameRecipe} eliminada de favoritos',
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  Text('\$${recipe.price.toString()}'),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(
-                            height: 90,
-                            width: 40,
-                            child: IconButton(
-                              icon: const Icon(Icons.favorite, color: Colors.red,),
-                              onPressed: () {
-                                recipeFavoriteProvider.favoriteList
-                                    .remove(recipe);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          '${recipe.nameRecipe} removed from favorites')),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
-                  },
-                );
+            },
+          );
         },
       ),
     );

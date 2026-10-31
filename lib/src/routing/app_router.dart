@@ -11,6 +11,7 @@ import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/recipes/ui/recipes_details.screen.dart';
 import 'package:resetas/src/features/recipes/ui/ingredients_utensil.dart';
+import 'package:resetas/src/features/notifications/ui/notifications_screen.dart';
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
     return GoRouter(
@@ -54,7 +55,14 @@ class AppRouter {
         ),
         GoRoute(
           path: '/recipes_details',
-          builder: (context, state) => RecipeDetailScreen(recipe: state.extra as RecipesModel),
+          builder: (context, state) {
+            final extra = state.extra;
+            final recipe = extra is RecipesModel
+                ? extra
+                : RecipesModel.fromJsonModel(
+                    Map<String, dynamic>.from(extra as Map));
+            return RecipeDetailScreen(recipe: recipe);
+          },
         ),
         GoRoute(
           path: '/my_profile',
@@ -65,14 +73,22 @@ class AppRouter {
           builder: (context, state) => const CarShop(),
         ),
         GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsScreen(),
+        ),
+        GoRoute(
           path: '/ensayo',
           builder: (context, state) => PaymentScreen(),
         ),
         GoRoute(
           path: '/ingredients_utensil',
           builder: (context, state) {
-              final recipe = state.extra as RecipesModel;
-              return IngredientsUtensil(recipe: recipe);
+            final extra = state.extra;
+            final recipe = extra is RecipesModel
+                ? extra
+                : RecipesModel.fromJsonModel(
+                    Map<String, dynamic>.from(extra as Map));
+            return IngredientsUtensil(recipe: recipe);
           },
         ),
         GoRoute(
