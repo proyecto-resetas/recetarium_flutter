@@ -10,9 +10,7 @@ class AuthApiService {
   AuthApiService() {
     _dio = Dio(
       BaseOptions(
-        // Se usa la URL configurada en el proyecto, pero se puede sobrescribir
-        // si es necesario para el puerto 3003 mencionado en el curl.
-        baseUrl: Config.apiUrl, 
+        baseUrl: Config.apiUrl,
         connectTimeout: const Duration(seconds: 20),
         receiveTimeout: const Duration(seconds: 20),
       ),
@@ -78,7 +76,7 @@ class AuthApiService {
           },
         ),
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data as Map<String, dynamic>;
       }
@@ -91,16 +89,61 @@ class AuthApiService {
     }
   }
 
-  // Se podría agregar también el método para reenviar el código
   Future<bool> resendOtp(String email) async {
     try {
       final response = await _dio.post(
-        '/auth/otp/resend', // Ajustar según API real
+        '/auth/otp/resend',
         data: {
           'email': email,
         },
         options: Options(
           headers: {
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '/auth/forgot-password',
+        data: {
+          'email': email.trim(),
+        },
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/auth/reset-password',
+        data: {
+          'email': email.trim(),
+          'newPassword': newPassword,
+        },
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
             'x-api-key': Config.xapikey,
           },
         ),

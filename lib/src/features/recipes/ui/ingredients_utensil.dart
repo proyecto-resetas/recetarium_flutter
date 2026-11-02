@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:resetas/src/core/theme/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/recipes/ui/steps_screen.dart';
 import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
@@ -57,6 +59,31 @@ class _IngredientsUtensilState extends State<IngredientsUtensil> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: IconButton(
+              tooltip: 'Ir al inicio',
+              onPressed: () {
+                final role = context.read<AuthProvider>().user?.role;
+                final homeRoute = (role == 'admin' || role == 'super_admin')
+                    ? '/admin_home'
+                    : '/home';
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                context.go(homeRoute);
+              },
+              icon: CircleAvatar(
+                radius: 18,
+                backgroundColor: colors.secondary.withValues(alpha: 0.1),
+                child: Icon(
+                  Icons.home_rounded,
+                  color: colors.secondary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: provider.isLoadingIngredients
           ? const Center(child: CircularProgressIndicator())

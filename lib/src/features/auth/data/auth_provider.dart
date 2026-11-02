@@ -33,7 +33,6 @@ class AuthProvider extends ChangeNotifier {
       final success = await _authApiService.login(loginRequestModel);
       return success;
     } catch (e) {
-      // Feedback discreto
       return false;
     }
   }
@@ -45,13 +44,8 @@ class AuthProvider extends ChangeNotifier {
       }
 
       final success = await _authApiService.register(user);
-      if (success) {
-        return true;
-      } else {
-        return false;
-      }
+      return success;
     } catch (e) {
-      // Feedback discreto
       return false;
     }
   }
@@ -60,16 +54,15 @@ class AuthProvider extends ChangeNotifier {
     try {
       final data = await _authApiService.verifyOtp(email, code);
       if (data != null) {
-        // Mapear la respuesta flat al modelo UserResModel
         final userResModel = UserResModel(
           id: data['userId'] ?? '',
           username: data['username'] ?? '',
-          lastname: '', // No viene en el verify flat
+          lastname: '',
           email: data['email'] ?? '',
-          phone: '', 
-          country: '', 
-          city: '', 
-          photoUrl: '', 
+          phone: '',
+          country: '',
+          city: '',
+          photoUrl: '',
           role: data['role'] ?? 'user',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -79,13 +72,42 @@ class AuthProvider extends ChangeNotifier {
         _accessToken = AccessToken(accessToken: token);
         _user = userResModel;
 
-        
-
         await _saveAuthDataToHive(token, userResModel);
         notifyListeners();
         return true;
       }
       return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    try {
+      return await _authApiService.forgotPassword(email);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> verifyRecoveryOtp(String email, String code) async {
+    try {
+      final data = await _authApiService.verifyOtp(email.trim(), code.trim());
+      return data != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    try {
+      return await _authApiService.resetPassword(
+        email: email,
+        newPassword: newPassword,
+      );
     } catch (e) {
       return false;
     }

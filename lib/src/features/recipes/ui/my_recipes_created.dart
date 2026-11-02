@@ -5,11 +5,15 @@ import 'package:resetas/src/core/widgets/image_card.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/data/my_recipes_created_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 
 class MyRecipesCreated extends StatefulWidget {
   final bool embedded;
   final String searchQuery;
   final String? selectedCategory;
+  final String? selectedLevel;
+  final double? maxPrice;
+  final RecipeSortOption sortOption;
   final VoidCallback? onCreateRecipeTap;
 
   const MyRecipesCreated({
@@ -17,6 +21,9 @@ class MyRecipesCreated extends StatefulWidget {
     this.embedded = false,
     this.searchQuery = '',
     this.selectedCategory,
+    this.selectedLevel,
+    this.maxPrice,
+    this.sortOption = RecipeSortOption.none,
     this.onCreateRecipeTap,
   });
 
@@ -25,11 +32,6 @@ class MyRecipesCreated extends StatefulWidget {
 }
 
 class _MyRecipesCreatedState extends State<MyRecipesCreated> {
-  static const Color _brandOrange = Color(0xFFF26625);
-  static const Color _bgWarm = Color(0xFFFAF8F5);
-  static const Color _textDark = Color(0xFF1E1E1E);
-  static const Color _textMuted = Color(0xFF757575);
-
   bool _isLoading = false;
 
   @override
@@ -67,94 +69,111 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
   }
 
   List<RecipesModel> _filterRecipes(List<RecipesModel> source) {
-    final query = widget.searchQuery.trim().toLowerCase();
-    final category = widget.selectedCategory;
-
-    return source.where((r) {
-      if (category != null &&
-          category.isNotEmpty &&
-          r.category.toLowerCase() != category.toLowerCase()) {
-        return false;
-      }
-      if (query.isNotEmpty) {
-        final matchName = r.nameRecipe.toLowerCase().contains(query);
-        final matchCategory = r.category.toLowerCase().contains(query);
-        return matchName || matchCategory;
-      }
-      return true;
-    }).toList();
+    return RecipeFilterCatalog.applyFilters(
+      source: source,
+      searchQuery: widget.searchQuery,
+      category: widget.selectedCategory,
+      level: widget.selectedLevel,
+      maxPrice: widget.maxPrice,
+      sortOption: widget.sortOption,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final createdProvider = context.watch<RecipeMyCreatedProvider>();
     final allCreated = createdProvider.myRecipeList;
     final filtered = _filterRecipes(allCreated);
 
     final content = RefreshIndicator(
-      color: _brandOrange,
+      color: colors.primary,
       onRefresh: _loadCreatedRecipes,
       child: CustomScrollView(
         slivers: [
-          // Banner Resumen de Creador ("Has creado X recetas en Recetarium")
+          // Banner Resumen de Creador en tarjeta blanca suave
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEFE6),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: _brandOrange.withValues(alpha: 0.18),
+                    color: colors.secondary.withValues(alpha: 0.1),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          color: _textDark,
-                        ),
-                        children: [
-                          const TextSpan(text: 'Has creado '),
-                          TextSpan(
-                            text:
-                                '${allCreated.length} ${allCreated.length == 1 ? 'receta' : 'recetas'}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                            ),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colors.secondary,
                           ),
-                          const TextSpan(text: ' en Recetarium'),
-                        ],
+                          children: [
+                            const TextSpan(text: 'Has creado '),
+                            TextSpan(
+                              text:
+                                  '${allCreated.length} ${allCreated.length == 1 ? 'receta' : 'recetas'}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const TextSpan(text: ' en Recetarium'),
+                          ],
+                        ),
                       ),
                     ),
                     if (widget.onCreateRecipeTap != null) ...[
-                      const SizedBox(height: 10),
-                      ElevatedButton.icon(
-                        onPressed: widget.onCreateRecipeTap,
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text(
-                          'Crear receta',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _brandOrange,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
+                      const SizedBox(width: 12),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: widget.onCreateRecipeTap,
+                        child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
+                            horizontal: 14,
+                            vertical: 8,
                           ),
-                          minimumSize: Size.zero,
-                          shape: RoundedRectangleBorder(
+                          decoration: BoxDecoration(
+                            color: colors.primary.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: colors.primary.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.add_rounded,
+                                size: 17,
+                                color: colors.secondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Crear receta',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12.5,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -166,16 +185,16 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
           ),
 
           if (_isLoading && allCreated.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: CircularProgressIndicator(color: _brandOrange),
+                child: CircularProgressIndicator(color: colors.primary),
               ),
             )
           else if (filtered.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _buildEmptyState(),
+              child: _buildEmptyState(colors),
             )
           else
             SliverPadding(
@@ -184,6 +203,7 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => _buildCreatedRecipeCard(
                     context,
+                    colors,
                     filtered[index],
                   ),
                   childCount: filtered.length,
@@ -197,23 +217,125 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
     if (widget.embedded) return content;
 
     return Scaffold(
-      backgroundColor: _bgWarm,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: content,
     );
   }
 
-  Widget _buildCreatedRecipeCard(BuildContext context, RecipesModel recipe) {
+  Future<void> _confirmDeleteRecipe(
+    BuildContext context,
+    RecipesModel recipe,
+  ) async {
+    final colors = Theme.of(context).colorScheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEDED),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.delete_forever_rounded,
+                color: Color(0xFFD62828),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Eliminar receta',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colors.secondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '¿Estás seguro de eliminar permanentemente "${recipe.nameRecipe}"? '
+          'Se borrarán también sus pasos y referencias.',
+          style: TextStyle(
+            fontSize: 14,
+            color: colors.secondary.withValues(alpha: 0.78),
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(
+                color: colors.secondary.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD62828),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Sí, eliminar',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted && recipe.id != null) {
+      final ok = await context
+          .read<RecipeMyCreatedProvider>()
+          .deleteRecipe(recipe.id!);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor:
+                ok ? const Color(0xFF1B2332) : const Color(0xFFD62828),
+            content: Text(
+              ok
+                  ? 'Receta "${recipe.nameRecipe}" eliminada correctamente'
+                  : 'No se pudo eliminar la receta (requiere Super Admin)',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildCreatedRecipeCard(
+    BuildContext context,
+    ColorScheme colors,
+    RecipesModel recipe,
+  ) {
+    final isSuperAdmin =
+        context.watch<AuthProvider>().user?.role == 'super_admin';
     return GestureDetector(
       onTap: () => context.push('/recipes_details', extra: recipe),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -222,7 +344,7 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Columna izquierda: miniatura + badge "★ Tu receta"
+            // Columna izquierda: miniatura + badge suave "★ Tu receta"
             Column(
               children: [
                 ClipRRect(
@@ -240,24 +362,24 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3EC),
+                    color: colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.star_rounded,
                         size: 12,
-                        color: _textDark,
+                        color: colors.primary,
                       ),
-                      SizedBox(width: 3),
+                      const SizedBox(width: 3),
                       Text(
                         'Tu receta',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: _textDark,
+                          color: colors.secondary,
                         ),
                       ),
                     ],
@@ -267,7 +389,7 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
             ),
             const SizedBox(width: 14),
 
-            // Información central y acciones
+            // Información central y acciones con tonos suaves
             Expanded(
               child: SizedBox(
                 height: 108,
@@ -285,32 +407,58 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8EEF2),
+                              color: colors.secondary.withValues(alpha: 0.07),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               recipe.category,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF2C3E50),
+                                color: colors.secondary,
                               ),
                             ),
                           )
                         else
                           const SizedBox.shrink(),
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEDEFF2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.edit_outlined,
-                            size: 16,
-                            color: Color(0xFF2C3E50),
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: colors.secondary.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: colors.secondary,
+                              ),
+                            ),
+                            if (isSuperAdmin) ...[
+                              const SizedBox(width: 6),
+                              InkWell(
+                                borderRadius: BorderRadius.circular(10),
+                                onTap: () =>
+                                    _confirmDeleteRecipe(context, recipe),
+                                child: Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFEDED),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    size: 16,
+                                    color: Color(0xFFD62828),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -319,9 +467,8 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
-                        color: _textDark,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     Row(
@@ -329,10 +476,10 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                       children: [
                         Text(
                           _formatPrice(recipe.price),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: _brandOrange,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: colors.primary,
                           ),
                         ),
                         Container(
@@ -341,25 +488,25 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: _brandOrange,
+                            color: colors.primary.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 'Ver receta',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: colors.secondary,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Icon(
                                 Icons.arrow_forward_rounded,
                                 size: 13,
-                                color: Colors.white,
+                                color: colors.secondary,
                               ),
                             ],
                           ),
@@ -376,7 +523,7 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme colors) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
@@ -384,32 +531,35 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 84,
-              height: 84,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFF3EC),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.restaurant_menu_rounded,
-                size: 40,
-                color: _brandOrange,
+                size: 46,
+                color: colors.primary,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Aún no has creado recetas',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: _textDark,
+                color: colors.secondary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Publica tus propias creaciones culinarias y compártelas con la comunidad de Recetarium.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13.5, color: _textMuted, height: 1.4),
+              style: TextStyle(
+                fontSize: 13.5,
+                color: colors.onSurface.withValues(alpha: 0.6),
+                height: 1.4,
+              ),
             ),
           ],
         ),

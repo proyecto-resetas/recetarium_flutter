@@ -5,18 +5,25 @@ import 'package:resetas/src/core/widgets/image_card.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
 
 class MyRecipesFavorites extends StatefulWidget {
   final bool embedded;
   final String searchQuery;
   final String? selectedCategory;
+  final String? selectedLevel;
+  final double? maxPrice;
+  final RecipeSortOption sortOption;
 
   const MyRecipesFavorites({
     super.key,
     this.embedded = false,
     this.searchQuery = '',
     this.selectedCategory,
+    this.selectedLevel,
+    this.maxPrice,
+    this.sortOption = RecipeSortOption.none,
   });
 
   @override
@@ -24,49 +31,13 @@ class MyRecipesFavorites extends StatefulWidget {
 }
 
 class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
-  static const Color _brandOrange = Color(0xFFF26625);
-  static const Color _bgWarm = Color(0xFFFAF8F5);
-  static const Color _textDark = Color(0xFF1E1E1E);
-  static const Color _textMuted = Color(0xFF757575);
-
   bool _isLoading = false;
   String _localSearch = '';
   String? _localCategory;
+  String? _localLevel;
+  double? _localMaxPrice;
+  RecipeSortOption _localSortOption = RecipeSortOption.none;
   final TextEditingController _searchController = TextEditingController();
-
-  static const List<({String label, String? value, IconData icon})>
-      _categories = [
-    (
-      label: 'Todas',
-      value: null,
-      icon: Icons.local_fire_department_rounded,
-    ),
-    (
-      label: 'Entrada',
-      value: 'Entrada',
-      icon: Icons.soup_kitchen_rounded,
-    ),
-    (
-      label: 'Plato principal',
-      value: 'Plato principal',
-      icon: Icons.restaurant_rounded,
-    ),
-    (
-      label: 'Postre',
-      value: 'Postre',
-      icon: Icons.cake_rounded,
-    ),
-    (
-      label: 'Sopa',
-      value: 'Sopa',
-      icon: Icons.ramen_dining_rounded,
-    ),
-    (
-      label: 'Guarnición',
-      value: 'Guarnicion',
-      icon: Icons.eco_rounded,
-    ),
-  ];
 
   @override
   void initState() {
@@ -108,52 +79,27 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
     return '\$${buffer.toString()}';
   }
 
-  Color _levelBadgeColor(String level) {
-    switch (level.toLowerCase()) {
-      case 'basico':
-      case 'básico':
-      case 'principiante':
-        return const Color(0xFF2E7D32);
-      case 'intermedio':
-        return const Color(0xFFF28C25);
-      case 'avanzado':
-        return const Color(0xFFD32F2F);
-      default:
-        return _brandOrange;
-    }
-  }
-
   List<RecipesModel> _filterRecipes(List<RecipesModel> source) {
-    final query =
-        (widget.embedded ? widget.searchQuery : _localSearch).trim().toLowerCase();
-    final category =
-        widget.embedded ? widget.selectedCategory : _localCategory;
-
-    return source.where((r) {
-      if (category != null &&
-          category.isNotEmpty &&
-          r.category.toLowerCase() != category.toLowerCase()) {
-        return false;
-      }
-      if (query.isNotEmpty) {
-        final matchName = r.nameRecipe.toLowerCase().contains(query);
-        final matchCategory = r.category.toLowerCase().contains(query);
-        final matchChef = r.creatorDisplayName.toLowerCase().contains(query);
-        return matchName || matchCategory || matchChef;
-      }
-      return true;
-    }).toList();
+    return RecipeFilterCatalog.applyFilters(
+      source: source,
+      searchQuery: widget.embedded ? widget.searchQuery : _localSearch,
+      category: widget.embedded ? widget.selectedCategory : _localCategory,
+      level: widget.embedded ? widget.selectedLevel : _localLevel,
+      maxPrice: widget.embedded ? widget.maxPrice : _localMaxPrice,
+      sortOption: widget.embedded ? widget.sortOption : _localSortOption,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final favProvider = context.watch<RecipeFavoriteProvider>();
     final shopProvider = context.watch<CarShopProvider>();
     final authProvider = context.read<AuthProvider>();
     final filtered = _filterRecipes(favProvider.favoriteList);
 
     final content = RefreshIndicator(
-      color: _brandOrange,
+      color: colors.primary,
       onRefresh: _loadFavorites,
       child: CustomScrollView(
         slivers: [
@@ -166,29 +112,28 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                   children: [
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Mis Favoritas',
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: _textDark,
-                            letterSpacing: -0.5,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: colors.secondary,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
+                            horizontal: 9,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFECE2),
-                            borderRadius: BorderRadius.circular(20),
+                            color: colors.secondary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '${favProvider.favoriteList.length}',
-                            style: const TextStyle(
-                              color: _brandOrange,
+                            style: TextStyle(
+                              color: colors.secondary,
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -197,113 +142,70 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Recetas que has guardado para preparar más adelante',
-                      style: TextStyle(fontSize: 13.5, color: _textMuted),
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: colors.onSurface.withValues(alpha: 0.65),
+                      ),
                     ),
                     const SizedBox(height: 14),
-                    TextField(
-                      controller: _searchController,
-                      onChanged: (v) => setState(() => _localSearch = v),
-                      decoration: InputDecoration(
-                        hintText: 'Buscar en mis favoritas...',
-                        hintStyle: const TextStyle(
-                          color: _textMuted,
-                          fontSize: 13.5,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: _textMuted,
-                          size: 20,
-                        ),
-                        suffixIcon: _localSearch.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close_rounded, size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _localSearch = '');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: const Color(0xFFEDEFF2),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _categories.map((cat) {
-                          final selected = _localCategory == cat.value;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onTap: () =>
-                                  setState(() => _localCategory = cat.value),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 13,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: selected ? _brandOrange : Colors.white,
-                                  borderRadius: BorderRadius.circular(22),
-                                  border: Border.all(
-                                    color: selected
-                                        ? _brandOrange
-                                        : const Color(0xFFD8D4CE),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      cat.icon,
-                                      size: 15,
-                                      color:
-                                          selected ? Colors.white : _brandOrange,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      cat.label,
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: selected
-                                            ? Colors.white
-                                            : _textDark,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    RecipeFiltersHeaderWidget(
+                      searchController: _searchController,
+                      hintText: 'Buscar en mis favoritas…',
+                      selectedCategory: _localCategory,
+                      selectedLevel: _localLevel,
+                      sortOption: _localSortOption,
+                      maxPrice: _localMaxPrice,
+                      onSearchChanged: (v) =>
+                          setState(() => _localSearch = v),
+                      onSearchCleared: () {
+                        _searchController.clear();
+                        setState(() => _localSearch = '');
+                      },
+                      onCategorySelected: (cat) =>
+                          setState(() => _localCategory = cat),
+                      onLevelSelected: (lvl) =>
+                          setState(() => _localLevel = lvl),
+                      onOpenFilterModal: () {
+                        RecipeFilterCatalog.openFilterAndSortSheet(
+                          context: context,
+                          currentRecipes: favProvider.favoriteList,
+                          currentSort: _localSortOption,
+                          currentMaxPrice: _localMaxPrice,
+                          currentCategory: _localCategory,
+                          currentLevel: _localLevel,
+                          onApply: ({
+                            required RecipeSortOption sortOption,
+                            required double? maxPrice,
+                            required String? category,
+                            required String? level,
+                          }) {
+                            setState(() {
+                              _localSortOption = sortOption;
+                              _localMaxPrice = maxPrice;
+                              _localCategory = category;
+                              _localLevel = level;
+                            });
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
             ),
           if (_isLoading && favProvider.favoriteList.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: CircularProgressIndicator(color: _brandOrange),
+                child: CircularProgressIndicator(color: colors.primary),
               ),
             )
           else if (filtered.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _buildEmptyState(),
+              child: _buildEmptyState(colors),
             )
           else
             SliverPadding(
@@ -314,6 +216,7 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                     final recipe = filtered[index];
                     return _buildFavoriteCard(
                       context,
+                      colors,
                       recipe,
                       favProvider,
                       shopProvider,
@@ -331,19 +234,21 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
     if (widget.embedded) return content;
 
     return Scaffold(
-      backgroundColor: _bgWarm,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: content,
     );
   }
 
   Widget _buildFavoriteCard(
     BuildContext context,
+    ColorScheme colors,
     RecipesModel recipe,
     RecipeFavoriteProvider favProvider,
     CarShopProvider shopProvider,
     AuthProvider authProvider,
   ) {
     final inCart = shopProvider.shoppingList.any((r) => r.id == recipe.id);
+    final lvlColor = RecipeFilterCatalog.levelColor(recipe.level, colors);
 
     return GestureDetector(
       onTap: () => context.push('/recipes_details', extra: recipe),
@@ -351,11 +256,11 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -364,7 +269,7 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Imagen con badge de dificultad
+            // Imagen con badge suave en fondo blanco traslúcido
             SizedBox(
               width: 96,
               height: 96,
@@ -382,19 +287,33 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 7,
-                          vertical: 2.5,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: _levelBadgeColor(recipe.level),
+                          color: Colors.white.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          recipe.level,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: lvlColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              recipe.level,
+                              style: TextStyle(
+                                color: colors.secondary,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -415,15 +334,15 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8EEF2),
+                        color: colors.secondary.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         recipe.category,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF2C3E50),
+                          color: colors.secondary,
                         ),
                       ),
                     ),
@@ -433,18 +352,17 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
-                      color: _textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline_rounded,
-                        size: 13.5,
-                        color: _textMuted,
+                        size: 14,
+                        color: colors.onSurface.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -452,10 +370,9 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                           recipe.creatorDisplayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: _textMuted,
-                            fontWeight: FontWeight.w500,
+                            color: colors.onSurface.withValues(alpha: 0.65),
                           ),
                         ),
                       ),
@@ -464,10 +381,10 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                   const SizedBox(height: 8),
                   Text(
                     _formatPrice(recipe.price),
-                    style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w900,
-                      color: _brandOrange,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: colors.primary,
                     ),
                   ),
                 ],
@@ -475,7 +392,7 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
             ),
             const SizedBox(width: 8),
 
-            // Acciones derechas: Favorito (arriba) + Carrito (abajo)
+            // Acciones derechas con tonos pastel suaves
             SizedBox(
               height: 92,
               child: Column(
@@ -499,7 +416,7 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                             ),
                             action: SnackBarAction(
                               label: 'Deshacer',
-                              textColor: _brandOrange,
+                              textColor: colors.primary,
                               onPressed: () {
                                 favProvider.addFavorite(
                                   recipe,
@@ -514,12 +431,12 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFEBEE),
+                        color: colors.secondary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
                         Icons.favorite_rounded,
-                        color: Color(0xFFD32F2F),
+                        color: Color(0xFFE53935),
                         size: 18,
                       ),
                     ),
@@ -545,15 +462,15 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
                       height: 34,
                       decoration: BoxDecoration(
                         color: inCart
-                            ? const Color(0xFFE8F5E9)
-                            : _brandOrange.withValues(alpha: 0.14),
+                            ? colors.tertiary.withValues(alpha: 0.12)
+                            : colors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         inCart
                             ? Icons.check_rounded
                             : Icons.add_shopping_cart_rounded,
-                        color: inCart ? const Color(0xFF2E7D32) : _brandOrange,
+                        color: inCart ? colors.tertiary : colors.primary,
                         size: 17,
                       ),
                     ),
@@ -567,7 +484,7 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme colors) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
@@ -575,32 +492,35 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 84,
-              height: 84,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFEBEE),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.favorite_border_rounded,
-                size: 40,
-                color: Color(0xFFD32F2F),
+                size: 46,
+                color: colors.primary,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Aún no tienes recetas favoritas',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: _textDark,
+                color: colors.secondary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Toca el corazón en cualquier receta del catálogo para guardarla aquí.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13.5, color: _textMuted, height: 1.4),
+              style: TextStyle(
+                fontSize: 13.5,
+                color: colors.onSurface.withValues(alpha: 0.6),
+                height: 1.4,
+              ),
             ),
           ],
         ),

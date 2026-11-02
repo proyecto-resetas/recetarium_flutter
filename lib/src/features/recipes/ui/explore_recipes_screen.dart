@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
 import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
-
-enum _RecipeSortOption {
-  none,
-  priceAsc,
-  priceDesc,
-  nameAsc,
-}
 
 class ExploreRecipesScreen extends StatefulWidget {
   const ExploreRecipesScreen({super.key});
@@ -26,22 +19,8 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategory;
   String? _selectedLevel;
-  _RecipeSortOption _sortOption = _RecipeSortOption.none;
+  RecipeSortOption _sortOption = RecipeSortOption.none;
   double? _maxPrice;
-
-  static const List<Map<String, dynamic>> _categories = [
-    {'label': 'Todas', 'value': null, 'icon': Icons.local_fire_department_rounded},
-    {'label': 'Entrada', 'value': 'Entrada', 'icon': Icons.eco_rounded},
-    {'label': 'Aperitivo', 'value': 'Aperitivo', 'icon': Icons.tapas_rounded},
-    {'label': 'Plato principal', 'value': 'Plato principal', 'icon': Icons.restaurant_rounded},
-    {'label': 'Postre', 'value': 'Postre', 'icon': Icons.cake_rounded},
-    {'label': 'Sopa', 'value': 'Sopa', 'icon': Icons.soup_kitchen_rounded},
-    {'label': 'Ensalada', 'value': 'Ensalada', 'icon': Icons.grass_rounded},
-    {'label': 'Guarnición', 'value': 'Guarnicion', 'icon': Icons.fastfood_rounded},
-    {'label': 'Salsa', 'value': 'Salsa', 'icon': Icons.water_drop_rounded},
-  ];
-
-  static const _levels = ['Basico', 'Intermedio', 'Avanzado'];
 
   @override
   void initState() {
@@ -70,7 +49,7 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
     int count = 0;
     if (_selectedCategory != null) count++;
     if (_selectedLevel != null) count++;
-    if (_sortOption != _RecipeSortOption.none) count++;
+    if (_sortOption != RecipeSortOption.none) count++;
     if (_maxPrice != null) count++;
     return count;
   }
@@ -94,345 +73,49 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
       _searchController.clear();
       _selectedCategory = null;
       _selectedLevel = null;
-      _sortOption = _RecipeSortOption.none;
+      _sortOption = RecipeSortOption.none;
       _maxPrice = null;
     });
     _applyFilters(provider);
   }
 
   List<RecipesModel> _getProcessedRecipes(List<RecipesModel> rawList) {
-    List<RecipesModel> result = List<RecipesModel>.from(rawList);
-
-    if (_maxPrice != null) {
-      result = result.where((r) => r.price <= _maxPrice!).toList();
-    }
-
-    switch (_sortOption) {
-      case _RecipeSortOption.priceAsc:
-        result.sort((a, b) => a.price.compareTo(b.price));
-        break;
-      case _RecipeSortOption.priceDesc:
-        result.sort((a, b) => b.price.compareTo(a.price));
-        break;
-      case _RecipeSortOption.nameAsc:
-        result.sort(
-          (a, b) =>
-              a.nameRecipe.toLowerCase().compareTo(b.nameRecipe.toLowerCase()),
-        );
-        break;
-      case _RecipeSortOption.none:
-        break;
-    }
-
-    return result;
+    return RecipeFilterCatalog.applyFilters(
+      source: rawList,
+      maxPrice: _maxPrice,
+      sortOption: _sortOption,
+    );
   }
 
   void _openFilterAndSortSheet(
     BuildContext context,
     ViewRecipesProvider provider,
   ) {
-    final colors = Theme.of(context).colorScheme;
-    final allPrices =
-        provider.recipeListFilter.map((r) => r.price.toDouble()).toList();
-    final double highestPrice = allPrices.isEmpty
-        ? 100.0
-        : (allPrices.reduce((a, b) => a > b ? a : b)).ceilToDouble().clamp(
-              10.0,
-              500000.0,
-            );
-
-    _RecipeSortOption tempSort = _sortOption;
-    double? tempMaxPrice = _maxPrice;
-    String? tempCategory = _selectedCategory;
-    String? tempLevel = _selectedLevel;
-
-    showModalBottomSheet(
+    RecipeFilterCatalog.openFilterAndSortSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Indicador superior (drag handle)
-                    Center(
-                      child: Container(
-                        width: 42,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Título + Botón restablecer
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Filtrar y ordenar',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: colors.secondary,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setModalState(() {
-                              tempSort = _RecipeSortOption.none;
-                              tempMaxPrice = null;
-                              tempCategory = null;
-                              tempLevel = null;
-                            });
-                          },
-                          child: Text(
-                            'Restablecer',
-                            style: TextStyle(
-                              color: colors.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // 1. Ordenar por
-                    Text(
-                      'Ordenar por',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: colors.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _buildSortChip(
-                          label: 'Predeterminado',
-                          icon: Icons.auto_awesome_rounded,
-                          selected: tempSort == _RecipeSortOption.none,
-                          colors: colors,
-                          onTap: () => setModalState(
-                            () => tempSort = _RecipeSortOption.none,
-                          ),
-                        ),
-                        _buildSortChip(
-                          label: 'Menor precio',
-                          icon: Icons.trending_down_rounded,
-                          selected: tempSort == _RecipeSortOption.priceAsc,
-                          colors: colors,
-                          onTap: () => setModalState(
-                            () => tempSort = _RecipeSortOption.priceAsc,
-                          ),
-                        ),
-                        _buildSortChip(
-                          label: 'Mayor precio',
-                          icon: Icons.trending_up_rounded,
-                          selected: tempSort == _RecipeSortOption.priceDesc,
-                          colors: colors,
-                          onTap: () => setModalState(
-                            () => tempSort = _RecipeSortOption.priceDesc,
-                          ),
-                        ),
-                        _buildSortChip(
-                          label: 'Nombre (A-Z)',
-                          icon: Icons.sort_by_alpha_rounded,
-                          selected: tempSort == _RecipeSortOption.nameAsc,
-                          colors: colors,
-                          onTap: () => setModalState(
-                            () => tempSort = _RecipeSortOption.nameAsc,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 2. Presupuesto / Precio máximo
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Precio máximo',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: colors.secondary,
-                          ),
-                        ),
-                        Text(
-                          tempMaxPrice == null
-                              ? 'Sin límite'
-                              : 'Hasta \$${tempMaxPrice!.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: colors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: (tempMaxPrice ?? highestPrice)
-                          .clamp(0.0, highestPrice),
-                      min: 0,
-                      max: highestPrice,
-                      activeColor: colors.primary,
-                      inactiveColor: colors.secondary.withValues(alpha: 0.12),
-                      onChanged: (val) {
-                        setModalState(() {
-                          tempMaxPrice =
-                              val >= highestPrice ? null : val.roundToDouble();
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 8),
-
-                    // 3. Nivel de dificultad
-                    Text(
-                      'Nivel de dificultad',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: colors.secondary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      children: _levels.map((lvl) {
-                        final isSelected = tempLevel == lvl;
-                        final lvlColor = _levelColor(lvl, colors);
-                        return ChoiceChip(
-                          label: Text(
-                            lvl,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: isSelected ? Colors.white : lvlColor,
-                            ),
-                          ),
-                          selected: isSelected,
-                          selectedColor: lvlColor,
-                          backgroundColor: lvlColor.withValues(alpha: 0.1),
-                          side: BorderSide.none,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          onSelected: (val) {
-                            setModalState(() {
-                              tempLevel = val ? lvl : null;
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Botón Aplicar
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.secondary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          elevation: 0,
-                        ),
-                        onPressed: () {
-                          final bool apiFilterChanged =
-                              tempCategory != _selectedCategory ||
-                                  tempLevel != _selectedLevel;
-                          setState(() {
-                            _sortOption = tempSort;
-                            _maxPrice = tempMaxPrice;
-                            _selectedCategory = tempCategory;
-                            _selectedLevel = tempLevel;
-                          });
-                          if (apiFilterChanged) {
-                            _applyFilters(provider);
-                          }
-                          Navigator.pop(sheetContext);
-                        },
-                        child: const Text(
-                          'Aplicar preferencias',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+      currentRecipes: provider.recipeListFilter,
+      currentSort: _sortOption,
+      currentMaxPrice: _maxPrice,
+      currentCategory: _selectedCategory,
+      currentLevel: _selectedLevel,
+      onApply: ({
+        required RecipeSortOption sortOption,
+        required double? maxPrice,
+        required String? category,
+        required String? level,
+      }) {
+        final bool apiFilterChanged =
+            category != _selectedCategory || level != _selectedLevel;
+        setState(() {
+          _sortOption = sortOption;
+          _maxPrice = maxPrice;
+          _selectedCategory = category;
+          _selectedLevel = level;
+        });
+        if (apiFilterChanged) {
+          _applyFilters(provider);
+        }
       },
-    );
-  }
-
-  Widget _buildSortChip({
-    required String label,
-    required IconData icon,
-    required bool selected,
-    required ColorScheme colors,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? colors.primary
-              : colors.secondary.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected
-                ? colors.primary
-                : colors.secondary.withValues(alpha: 0.15),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: selected ? Colors.white : colors.secondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : colors.secondary,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -461,7 +144,7 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
         return CustomScrollView(
           controller: provider.recipeScrollController,
           slivers: [
-            // ─── Bienvenida + Buscador + Botón Filtrar/Ordenar ──────────────
+            // ─── Bienvenida + Componente compartido `RecipeFiltersHeaderWidget` ─
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
@@ -499,241 +182,40 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Barra de búsqueda + Botón de Filtrar y Ordenar
-                    Row(
-                      children: [
-                        Expanded(
-                          child: CustomIconInput(
-                            controller: _searchController,
-                            hintText: 'Buscar receta o ingrediente…',
-                            prefixIcon: Icons.search_rounded,
-                            textInputAction: TextInputAction.search,
-                            onCleared: () {
-                              _searchController.clear();
-                              _applyFilters(provider);
-                              setState(() {});
-                            },
-                            onChanged: (value) {
-                              provider.progressiveSearch(
-                                value,
-                                _selectedCategory,
-                                _selectedLevel,
-                              );
-                              setState(() {});
-                            },
-                            onSubmitted: (_) => _applyFilters(provider),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Material(
-                              color: colors.secondary,
-                              borderRadius: BorderRadius.circular(16),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
-                                onTap: () =>
-                                    _openFilterAndSortSheet(context, provider),
-                                child: const Padding(
-                                  padding: EdgeInsets.all(14),
-                                  child: Icon(
-                                    Icons.tune_rounded,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (_activeAdvancedCount > 0)
-                              Positioned(
-                                top: -5,
-                                right: -5,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colors.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '$_activeAdvancedCount',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
+                    // Mismo componente de filtros que usa Mi Recetario (`BookRecipes`)
+                    RecipeFiltersHeaderWidget(
+                      searchController: _searchController,
+                      hintText: 'Buscar receta o ingrediente…',
+                      selectedCategory: _selectedCategory,
+                      selectedLevel: _selectedLevel,
+                      sortOption: _sortOption,
+                      maxPrice: _maxPrice,
+                      onSearchChanged: (value) {
+                        provider.progressiveSearch(
+                          value,
+                          _selectedCategory,
+                          _selectedLevel,
+                        );
+                        setState(() {});
+                      },
+                      onSearchSubmitted: (_) => _applyFilters(provider),
+                      onSearchCleared: () {
+                        _searchController.clear();
+                        _applyFilters(provider);
+                        setState(() {});
+                      },
+                      onCategorySelected: (val) {
+                        setState(() => _selectedCategory = val);
+                        _applyFilters(provider);
+                      },
+                      onLevelSelected: (lvl) {
+                        setState(() => _selectedLevel = lvl);
+                        _applyFilters(provider);
+                      },
+                      onOpenFilterModal: () =>
+                          _openFilterAndSortSheet(context, provider),
                     ),
                   ],
-                ),
-              ),
-            ),
-
-            // ─── Píldoras de Categorías ─────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  height: 42,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _categories.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, i) {
-                      final cat = _categories[i];
-                      final val = cat['value'];
-                      final selected = _selectedCategory == val;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory =
-                                selected && val != null ? null : val;
-                          });
-                          _applyFilters(provider);
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected ? colors.primary : Colors.white,
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(
-                              color: selected
-                                  ? colors.primary
-                                  : colors.secondary.withValues(alpha: 0.14),
-                            ),
-                            boxShadow: selected
-                                ? [
-                                    BoxShadow(
-                                      color:
-                                          colors.primary.withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                cat['icon'] as IconData,
-                                size: 15,
-                                color: selected
-                                    ? Colors.white
-                                    : colors.primary,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                cat['label'] as String? ?? '',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: selected
-                                      ? Colors.white
-                                      : colors.secondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-
-            // ─── Barra de Nivel de Dificultad ───────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      Text(
-                        'Dificultad:',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: colors.secondary.withValues(alpha: 0.75),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ..._levels.map((lvl) {
-                        final selected = _selectedLevel == lvl;
-                        final lvlColor = _levelColor(lvl, colors);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedLevel = selected ? null : lvl;
-                              });
-                              _applyFilters(provider);
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? lvlColor
-                                    : lvlColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: selected
-                                      ? lvlColor
-                                      : lvlColor.withValues(alpha: 0.25),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: BoxDecoration(
-                                      color: selected ? Colors.white : lvlColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    lvl,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: selected ? Colors.white : lvlColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
                 ),
               ),
             ),
@@ -837,19 +319,6 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
     );
   }
 
-  Color _levelColor(String level, ColorScheme colors) {
-    switch (level) {
-      case 'Basico':
-        return colors.tertiary;
-      case 'Intermedio':
-        return colors.primary;
-      case 'Avanzado':
-        return const Color(0xFFD32F2F);
-      default:
-        return colors.secondary;
-    }
-  }
-
   Widget _buildEmptyState(ColorScheme colors, ViewRecipesProvider provider) {
     return Center(
       child: Padding(
@@ -927,6 +396,7 @@ class _RecipeGridCard extends StatelessWidget {
     final authProvider = context.read<AuthProvider>();
     final favProvider = context.watch<RecipeFavoriteProvider>();
     final isFav = favProvider.favoriteList.any((f) => f.id == recipe.id);
+    final lvlColor = RecipeFilterCatalog.levelColor(recipe.level, colors);
 
     return GestureDetector(
       onTap: () => context.push(
@@ -967,16 +437,30 @@ class _RecipeGridCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: _levelColor(recipe.level, colors),
+                        color: Colors.white.withValues(alpha: 0.92),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
-                        recipe.level,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: lvlColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            recipe.level,
+                            style: TextStyle(
+                              color: colors.secondary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1004,7 +488,9 @@ class _RecipeGridCard extends StatelessWidget {
                           padding: const EdgeInsets.all(6),
                           child: Icon(
                             isFav ? Icons.favorite : Icons.favorite_border,
-                            color: isFav ? Colors.red : Colors.grey.shade700,
+                            color: isFav
+                                ? const Color(0xFFE53935)
+                                : Colors.grey.shade700,
                             size: 18,
                           ),
                         ),
@@ -1105,7 +591,7 @@ class _RecipeGridCard extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: colors.primary.withValues(alpha: 0.14),
+                              color: colors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -1125,19 +611,6 @@ class _RecipeGridCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _levelColor(String level, ColorScheme colors) {
-    switch (level) {
-      case 'Basico':
-        return colors.tertiary;
-      case 'Intermedio':
-        return colors.primary;
-      case 'Avanzado':
-        return const Color(0xFFD32F2F);
-      default:
-        return colors.secondary;
-    }
   }
 }
 

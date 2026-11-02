@@ -96,13 +96,55 @@ class MyProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              l10n.chefAmateur,
-              style: TextStyle(
-                fontSize: 16,
-                color: colorScheme.primary.withValues(alpha: 0.8),
-                fontWeight: FontWeight.w500,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  user.role == 'super_admin'
+                      ? 'Super Administrador'
+                      : user.role == 'admin'
+                          ? 'Chef Creador'
+                          : l10n.chefAmateur,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: colorScheme.primary.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (user.role == 'super_admin') ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1B2332),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.verified_user_rounded,
+                          size: 13,
+                          color: Color(0xFFFFD166),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'SUPER ADMIN',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 30),
             Padding(
@@ -140,6 +182,12 @@ class MyProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  if (user.role == 'super_admin')
+                    MenuTile(
+                      icon: Icons.admin_panel_settings_rounded,
+                      title: 'Panel de Super Administración',
+                      onTap: () => context.push('/super_admin'),
+                    ),
                   MenuTile(
                     icon: Icons.person_outline,
                     title: l10n.editProfile,

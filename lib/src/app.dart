@@ -9,6 +9,7 @@ import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart
 import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
 import 'package:resetas/src/features/recipes/data/steps_provider.dart';
 import 'package:resetas/src/features/notifications/data/notifications_provider.dart';
+import 'package:resetas/src/features/admin/data/super_admin_provider.dart';
 import 'package:resetas/src/routing/app_router.dart';
 import 'package:resetas/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RecipeFavoriteProvider()),
         ChangeNotifierProvider(create: (_) => RecipeMyCreatedProvider()),
         ChangeNotifierProvider(create: (_) => PaymentWompiProvider()),
+        ChangeNotifierProvider(create: (_) => SuperAdminProvider()),
         ChangeNotifierProxyProvider<AuthProvider, NotificationsProvider>(
           create: (_) => NotificationsProvider(),
           update: (_, auth, notifProvider) {

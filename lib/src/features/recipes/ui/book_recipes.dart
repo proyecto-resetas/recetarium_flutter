@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/data/my_recipes_created_provider.dart';
 import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
+import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/recipes/ui/my_recipes_created.dart';
 import 'package:resetas/src/features/recipes/ui/my_recipes_favorite.dart';
+import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
 import 'package:resetas/src/features/shopping_cart/ui/my_purchased_recipes.dart';
 
@@ -18,50 +20,13 @@ class BookRecipes extends StatefulWidget {
 }
 
 class _BookRecipesState extends State<BookRecipes> {
-  static const Color _brandOrange = Color(0xFFF26625);
-  static const Color _bgWarm = Color(0xFFFAF8F5);
-  static const Color _textDark = Color(0xFF1E1E1E);
-  static const Color _textMuted = Color(0xFF757575);
-  static const Color _filterBtnDark = Color(0xFF1A3A3A);
-
   int _selectedIndex = 0; // 0: Favoritas, 1: Creadas, 2: Compradas
   String _searchQuery = '';
   String? _selectedCategory;
+  String? _selectedLevel;
+  double? _maxPrice;
+  RecipeSortOption _sortOption = RecipeSortOption.none;
   final TextEditingController _searchController = TextEditingController();
-
-  static const List<({String label, String? value, IconData icon})>
-      _categories = [
-    (
-      label: 'Todas',
-      value: null,
-      icon: Icons.local_fire_department_rounded,
-    ),
-    (
-      label: 'Entrada',
-      value: 'Entrada',
-      icon: Icons.soup_kitchen_rounded,
-    ),
-    (
-      label: 'Plato principal',
-      value: 'Plato principal',
-      icon: Icons.restaurant_rounded,
-    ),
-    (
-      label: 'Postre',
-      value: 'Postre',
-      icon: Icons.cake_rounded,
-    ),
-    (
-      label: 'Sopa',
-      value: 'Sopa',
-      icon: Icons.ramen_dining_rounded,
-    ),
-    (
-      label: 'Guarnición',
-      value: 'Guarnicion',
-      icon: Icons.eco_rounded,
-    ),
-  ];
 
   @override
   void initState() {
@@ -83,6 +48,43 @@ class _BookRecipesState extends State<BookRecipes> {
     super.dispose();
   }
 
+  List<RecipesModel> _currentActiveList() {
+    switch (_selectedIndex) {
+      case 0:
+        return context.read<RecipeFavoriteProvider>().favoriteList;
+      case 1:
+        return context.read<RecipeMyCreatedProvider>().myRecipeList;
+      case 2:
+        return context.read<CarShopProvider>().purchasedList;
+      default:
+        return const [];
+    }
+  }
+
+  void _openFilterSheet() {
+    RecipeFilterCatalog.openFilterAndSortSheet(
+      context: context,
+      currentRecipes: _currentActiveList(),
+      currentSort: _sortOption,
+      currentMaxPrice: _maxPrice,
+      currentCategory: _selectedCategory,
+      currentLevel: _selectedLevel,
+      onApply: ({
+        required RecipeSortOption sortOption,
+        required double? maxPrice,
+        required String? category,
+        required String? level,
+      }) {
+        setState(() {
+          _sortOption = sortOption;
+          _maxPrice = maxPrice;
+          _selectedCategory = category;
+          _selectedLevel = level;
+        });
+      },
+    );
+  }
+
   Widget _buildActiveTabBody() {
     switch (_selectedIndex) {
       case 0:
@@ -90,12 +92,18 @@ class _BookRecipesState extends State<BookRecipes> {
           embedded: true,
           searchQuery: _searchQuery,
           selectedCategory: _selectedCategory,
+          selectedLevel: _selectedLevel,
+          maxPrice: _maxPrice,
+          sortOption: _sortOption,
         );
       case 1:
         return MyRecipesCreated(
           embedded: true,
           searchQuery: _searchQuery,
           selectedCategory: _selectedCategory,
+          selectedLevel: _selectedLevel,
+          maxPrice: _maxPrice,
+          sortOption: _sortOption,
           onCreateRecipeTap: widget.onCreateRecipeTap,
         );
       case 2:
@@ -103,6 +111,9 @@ class _BookRecipesState extends State<BookRecipes> {
           embedded: true,
           searchQuery: _searchQuery,
           selectedCategory: _selectedCategory,
+          selectedLevel: _selectedLevel,
+          maxPrice: _maxPrice,
+          sortOption: _sortOption,
         );
       default:
         return const SizedBox.shrink();
@@ -111,203 +122,102 @@ class _BookRecipesState extends State<BookRecipes> {
 
   @override
   Widget build(BuildContext context) {
-    final favCount = context.watch<RecipeFavoriteProvider>().favoriteList.length;
+    final colors = Theme.of(context).colorScheme;
+    final favCount =
+        context.watch<RecipeFavoriteProvider>().favoriteList.length;
     final createdCount =
         context.watch<RecipeMyCreatedProvider>().myRecipeList.length;
     final purchasedCount =
         context.watch<CarShopProvider>().purchasedList.length;
 
-    return Scaffold(
-      backgroundColor: _bgWarm,
-      body: Column(
+    return ColoredBox(
+      color: const Color(0xFFF8F9FA),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── Cabecera Principal "Mi Recetario" ──────────────────────────
+          // ─── Cabecera Principal "Mi Recetario" (Tonos suaves idénticos al Home)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Mi Recetario',
                   style: TextStyle(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    color: _textDark,
-                    letterSpacing: -0.6,
-                    height: 1.1,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: colors.secondary,
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Tus recetas favoritas, creadas y\ndesbloqueadas',
+                const SizedBox(height: 4),
+                Text(
+                  'Tus recetas favoritas, creadas y desbloqueadas',
                   style: TextStyle(
                     fontSize: 13.5,
-                    color: Color(0xFF3E3E3E),
+                    color: colors.onSurface.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,
-                    height: 1.25,
                   ),
                 ),
                 const SizedBox(height: 14),
 
-                // ─── Selector de Pestañas (Favoritas | Creadas | Compradas) ─
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildTabPill(
-                        index: 0,
-                        label: 'Favoritas ($favCount)',
-                        icon: Icons.favorite_rounded,
-                        inactiveIconColor: const Color(0xFFC62828),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildTabPill(
-                        index: 1,
-                        label: 'Creadas ($createdCount)',
-                        icon: Icons.restaurant_menu_rounded,
-                        inactiveIconColor: _brandOrange,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildTabPill(
-                        index: 2,
-                        label: 'Compradas ($purchasedCount)',
-                        icon: Icons.shopping_bag_rounded,
-                        inactiveIconColor: const Color(0xFF6A1B9A),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ─── Buscador y Categorías (en Favoritas y Compradas) ──────
-                if (_selectedIndex != 1) ...[
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (val) =>
-                              setState(() => _searchQuery = val),
-                          decoration: InputDecoration(
-                            hintText: 'Buscar en mi recetario...',
-                            hintStyle: const TextStyle(
-                              color: _textMuted,
-                              fontSize: 13.5,
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.search_rounded,
-                              color: _textDark,
-                              size: 20,
-                            ),
-                            suffixIcon: _searchQuery.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(
-                                      Icons.close_rounded,
-                                      size: 18,
-                                    ),
-                                    onPressed: () {
-                                      _searchController.clear();
-                                      setState(() => _searchQuery = '');
-                                    },
-                                  )
-                                : null,
-                            filled: true,
-                            fillColor: const Color(0xFFD9E1E5),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () {
-                          if (_selectedCategory != null ||
-                              _searchQuery.isNotEmpty) {
-                            _searchController.clear();
-                            setState(() {
-                              _selectedCategory = null;
-                              _searchQuery = '';
-                            });
-                          }
-                        },
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: _filterBtnDark,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            Icons.tune_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SingleChildScrollView(
+                // ─── Selector de Pestañas Suave Centrado (Favoritas | Creadas | Compradas)
+                Center(
+                  child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: _categories.map((cat) {
-                        final selected = _selectedCategory == cat.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedCategory = cat.value),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selected ? _brandOrange : Colors.white,
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(
-                                  color: selected
-                                      ? _brandOrange
-                                      : const Color(0xFF4B5563),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    cat.icon,
-                                    size: 15,
-                                    color:
-                                        selected ? Colors.white : _brandOrange,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    cat.label,
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w700,
-                                      color:
-                                          selected ? Colors.white : _textDark,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTabPill(
+                          colors: colors,
+                          index: 0,
+                          label: 'Favoritas ($favCount)',
+                          icon: Icons.favorite_border_rounded,
+                          activeIcon: Icons.favorite_rounded,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildTabPill(
+                          colors: colors,
+                          index: 1,
+                          label: 'Creadas ($createdCount)',
+                          icon: Icons.restaurant_menu_rounded,
+                          activeIcon: Icons.restaurant_menu_rounded,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildTabPill(
+                          colors: colors,
+                          index: 2,
+                          label: 'Compradas ($purchasedCount)',
+                          icon: Icons.shopping_bag_outlined,
+                          activeIcon: Icons.shopping_bag_rounded,
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(height: 12),
+
+                // ─── Mismo Componente de Filtros del Home (`RecipeFiltersHeaderWidget`)
+                RecipeFiltersHeaderWidget(
+                  searchController: _searchController,
+                  hintText: 'Buscar receta o ingrediente…',
+                  selectedCategory: _selectedCategory,
+                  selectedLevel: _selectedLevel,
+                  sortOption: _sortOption,
+                  maxPrice: _maxPrice,
+                  onSearchChanged: (val) =>
+                      setState(() => _searchQuery = val),
+                  onSearchCleared: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                  onCategorySelected: (cat) =>
+                      setState(() => _selectedCategory = cat),
+                  onLevelSelected: (lvl) =>
+                      setState(() => _selectedLevel = lvl),
+                  onOpenFilterModal: _openFilterSheet,
+                ),
               ],
             ),
           ),
@@ -322,48 +232,46 @@ class _BookRecipesState extends State<BookRecipes> {
   }
 
   Widget _buildTabPill({
+    required ColorScheme colors,
     required int index,
     required String label,
     required IconData icon,
-    required Color inactiveIconColor,
+    required IconData activeIcon,
   }) {
     final isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? _brandOrange : Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          color: isSelected
+              ? colors.primary.withValues(alpha: 0.14)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: isSelected ? _brandOrange : const Color(0xFF3E3E3E),
+            color: isSelected
+                ? colors.primary.withValues(alpha: 0.45)
+                : colors.secondary.withValues(alpha: 0.1),
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: _brandOrange.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon,
+              isSelected ? activeIcon : icon,
               size: 16,
-              color: isSelected ? Colors.white : inactiveIconColor,
+              color: isSelected
+                  ? colors.primary
+                  : colors.secondary.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: isSelected ? Colors.white : _textDark,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: colors.secondary,
               ),
             ),
           ],

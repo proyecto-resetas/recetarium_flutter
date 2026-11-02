@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
-//import 'package:resetas/src/features/recipes/models/book_recipe_model.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/user_profile/models/user_model.dart';
-
 import 'package:resetas/src/core/services/local_storage_service.dart';
 
 class RecipeMyCreatedProvider extends ChangeNotifier {
-
   final RecipesApiService recetasAPI = RecipesApiService();
   final LocalStorageService _localStorageService = LocalStorageService();
   final List<RecipesModel> _myRecipeList = [];
@@ -38,5 +35,14 @@ class RecipeMyCreatedProvider extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  Future<bool> deleteRecipe(String recipeId) async {
+    final ok = await recetasAPI.deleteRecipe(recipeId);
+    if (ok) {
+      _myRecipeList.removeWhere((r) => r.id == recipeId);
+      notifyListeners();
+    }
+    return ok;
   }
 }

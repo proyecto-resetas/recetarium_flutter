@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/src/core/theme/bootstrap_icons.dart';
+import 'package:resetas/src/features/auth/data/auth_provider.dart';
+import 'package:resetas/src/features/admin/ui/super_admin_panel_screen.dart';
 import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
 import 'package:resetas/src/features/recipes/ui/book_recipes.dart';
 import 'package:resetas/src/features/recipes/ui/create_recipe.dart';
@@ -30,6 +32,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         return BookRecipes(
           onCreateRecipeTap: () => _onItemTapped(0),
         );
+      case 3:
+        return SuperAdminPanelScreen(
+          embedded: true,
+          onBackToExplore: () => _onItemTapped(1),
+        );
       default:
         throw UnimplementedError('No widget for $selectedIndexButtom');
     }
@@ -47,11 +54,15 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     final cartCount = context.watch<CarShopProvider>().shoppingList.length;
     final unreadNotifications =
         context.watch<NotificationsProvider>().unreadCount;
+    final isSuperAdmin =
+        context.watch<AuthProvider>().user?.role == 'super_admin';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      extendBody: true,
-      appBar: AppBar(
+      extendBody: selectedIndexButtom != 3,
+      appBar: selectedIndexButtom == 3
+          ? null
+          : AppBar(
         backgroundColor: const Color(0xFFF8F9FA),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -165,6 +176,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             icon: Bootstrap.journal_bookmark,
             activeIcon: Bootstrap.journal_bookmark_fill,
           ),
+          if (isSuperAdmin)
+            CustomBottomNavItem(
+              icon: Icons.admin_panel_settings_outlined,
+              activeIcon: Icons.admin_panel_settings_rounded,
+            ),
         ],
       ),
     );

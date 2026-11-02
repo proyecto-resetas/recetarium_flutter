@@ -3,18 +3,25 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:resetas/src/core/widgets/image_card.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
 
 class MyPurchasedRecipes extends StatefulWidget {
   final bool embedded;
   final String searchQuery;
   final String? selectedCategory;
+  final String? selectedLevel;
+  final double? maxPrice;
+  final RecipeSortOption sortOption;
 
   const MyPurchasedRecipes({
     super.key,
     this.embedded = false,
     this.searchQuery = '',
     this.selectedCategory,
+    this.selectedLevel,
+    this.maxPrice,
+    this.sortOption = RecipeSortOption.none,
   });
 
   @override
@@ -22,44 +29,13 @@ class MyPurchasedRecipes extends StatefulWidget {
 }
 
 class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
-  static const Color _brandOrange = Color(0xFFF26625);
-  static const Color _bgWarm = Color(0xFFFAF8F5);
-  static const Color _textDark = Color(0xFF1E1E1E);
-  static const Color _textMuted = Color(0xFF757575);
-
   bool _isLoading = false;
   String _localSearch = '';
   String? _localCategory;
+  String? _localLevel;
+  double? _localMaxPrice;
+  RecipeSortOption _localSortOption = RecipeSortOption.none;
   final TextEditingController _searchController = TextEditingController();
-
-  static const List<({String label, String? value, IconData icon})>
-      _categories = [
-    (
-      label: 'Todas',
-      value: null,
-      icon: Icons.local_fire_department_rounded,
-    ),
-    (
-      label: 'Entrada',
-      value: 'Entrada',
-      icon: Icons.soup_kitchen_rounded,
-    ),
-    (
-      label: 'Plato principal',
-      value: 'Plato principal',
-      icon: Icons.restaurant_rounded,
-    ),
-    (
-      label: 'Postre',
-      value: 'Postre',
-      icon: Icons.cake_rounded,
-    ),
-    (
-      label: 'Sopa',
-      value: 'Sopa',
-      icon: Icons.ramen_dining_rounded,
-    ),
-  ];
 
   @override
   void initState() {
@@ -86,35 +62,25 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
   }
 
   List<RecipesModel> _filterRecipes(List<RecipesModel> source) {
-    final query =
-        (widget.embedded ? widget.searchQuery : _localSearch).trim().toLowerCase();
-    final category =
-        widget.embedded ? widget.selectedCategory : _localCategory;
-
-    return source.where((r) {
-      if (category != null &&
-          category.isNotEmpty &&
-          r.category.toLowerCase() != category.toLowerCase()) {
-        return false;
-      }
-      if (query.isNotEmpty) {
-        final matchName = r.nameRecipe.toLowerCase().contains(query);
-        final matchCategory = r.category.toLowerCase().contains(query);
-        final matchChef = r.creatorDisplayName.toLowerCase().contains(query);
-        return matchName || matchCategory || matchChef;
-      }
-      return true;
-    }).toList();
+    return RecipeFilterCatalog.applyFilters(
+      source: source,
+      searchQuery: widget.embedded ? widget.searchQuery : _localSearch,
+      category: widget.embedded ? widget.selectedCategory : _localCategory,
+      level: widget.embedded ? widget.selectedLevel : _localLevel,
+      maxPrice: widget.embedded ? widget.maxPrice : _localMaxPrice,
+      sortOption: widget.embedded ? widget.sortOption : _localSortOption,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final shopProvider = context.watch<CarShopProvider>();
     final allPurchased = shopProvider.purchasedList;
     final filtered = _filterRecipes(allPurchased);
 
     final content = RefreshIndicator(
-      color: _brandOrange,
+      color: colors.primary,
       onRefresh: _loadPurchased,
       child: CustomScrollView(
         slivers: [
@@ -127,29 +93,28 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                   children: [
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Mis Recetas Compradas',
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: _textDark,
-                            letterSpacing: -0.5,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: colors.secondary,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
+                            horizontal: 9,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(20),
+                            color: colors.tertiary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '${allPurchased.length}',
-                            style: const TextStyle(
-                              color: Color(0xFF2E7D32),
+                            style: TextStyle(
+                              color: colors.tertiary,
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -158,113 +123,70 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Recetas con el paso a paso e ingredientes desbloqueados de por vida',
-                      style: TextStyle(fontSize: 13.5, color: _textMuted),
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: colors.onSurface.withValues(alpha: 0.65),
+                      ),
                     ),
                     const SizedBox(height: 14),
-                    TextField(
-                      controller: _searchController,
-                      onChanged: (v) => setState(() => _localSearch = v),
-                      decoration: InputDecoration(
-                        hintText: 'Buscar en mis compradas...',
-                        hintStyle: const TextStyle(
-                          color: _textMuted,
-                          fontSize: 13.5,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: _textMuted,
-                          size: 20,
-                        ),
-                        suffixIcon: _localSearch.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close_rounded, size: 18),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() => _localSearch = '');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: const Color(0xFFEDEFF2),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _categories.map((cat) {
-                          final selected = _localCategory == cat.value;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onTap: () =>
-                                  setState(() => _localCategory = cat.value),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 13,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: selected ? _brandOrange : Colors.white,
-                                  borderRadius: BorderRadius.circular(22),
-                                  border: Border.all(
-                                    color: selected
-                                        ? _brandOrange
-                                        : const Color(0xFFD8D4CE),
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      cat.icon,
-                                      size: 15,
-                                      color:
-                                          selected ? Colors.white : _brandOrange,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      cat.label,
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: selected
-                                            ? Colors.white
-                                            : _textDark,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    RecipeFiltersHeaderWidget(
+                      searchController: _searchController,
+                      hintText: 'Buscar en mis compradas…',
+                      selectedCategory: _localCategory,
+                      selectedLevel: _localLevel,
+                      sortOption: _localSortOption,
+                      maxPrice: _localMaxPrice,
+                      onSearchChanged: (v) =>
+                          setState(() => _localSearch = v),
+                      onSearchCleared: () {
+                        _searchController.clear();
+                        setState(() => _localSearch = '');
+                      },
+                      onCategorySelected: (cat) =>
+                          setState(() => _localCategory = cat),
+                      onLevelSelected: (lvl) =>
+                          setState(() => _localLevel = lvl),
+                      onOpenFilterModal: () {
+                        RecipeFilterCatalog.openFilterAndSortSheet(
+                          context: context,
+                          currentRecipes: allPurchased,
+                          currentSort: _localSortOption,
+                          currentMaxPrice: _localMaxPrice,
+                          currentCategory: _localCategory,
+                          currentLevel: _localLevel,
+                          onApply: ({
+                            required RecipeSortOption sortOption,
+                            required double? maxPrice,
+                            required String? category,
+                            required String? level,
+                          }) {
+                            setState(() {
+                              _localSortOption = sortOption;
+                              _localMaxPrice = maxPrice;
+                              _localCategory = category;
+                              _localLevel = level;
+                            });
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
             ),
           if (_isLoading && allPurchased.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: CircularProgressIndicator(color: _brandOrange),
+                child: CircularProgressIndicator(color: colors.primary),
               ),
             )
           else if (filtered.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _buildEmptyState(),
+              child: _buildEmptyState(colors),
             )
           else
             SliverPadding(
@@ -273,6 +195,7 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => _buildPurchasedCard(
                     context,
+                    colors,
                     filtered[index],
                   ),
                   childCount: filtered.length,
@@ -286,23 +209,27 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
     if (widget.embedded) return content;
 
     return Scaffold(
-      backgroundColor: _bgWarm,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: content,
     );
   }
 
-  Widget _buildPurchasedCard(BuildContext context, RecipesModel recipe) {
+  Widget _buildPurchasedCard(
+    BuildContext context,
+    ColorScheme colors,
+    RecipesModel recipe,
+  ) {
     return GestureDetector(
       onTap: () => context.push('/recipes_details', extra: recipe),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -327,31 +254,31 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Badge verde "✓ Desbloqueada"
+                  // Badge verde "✓ Desbloqueada" usando colors.tertiary
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 9,
                       vertical: 3.5,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDFF4E4),
+                      color: colors.tertiary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.check_rounded,
                           size: 13,
-                          color: Color(0xFF1F7A3A),
+                          color: colors.tertiary,
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
                           'Desbloqueada',
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1F7A3A),
+                            color: colors.tertiary,
                           ),
                         ),
                       ],
@@ -365,9 +292,8 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
-                      color: _textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -375,10 +301,10 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                   // Chef
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline_rounded,
-                        size: 13.5,
-                        color: _textMuted,
+                        size: 14,
+                        color: colors.onSurface.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -386,10 +312,9 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                           recipe.creatorDisplayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: _textMuted,
-                            fontWeight: FontWeight.w500,
+                            color: colors.onSurface.withValues(alpha: 0.65),
                           ),
                         ),
                       ),
@@ -397,17 +322,17 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Botón cálido "Ver paso a paso →"
+                  // Botón "Ver paso a paso →" con la paleta del Home
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFEFE6),
+                      color: colors.primary.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
@@ -415,14 +340,14 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w800,
-                            color: _textDark,
+                            color: colors.secondary,
                           ),
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Icon(
                           Icons.arrow_forward_rounded,
                           size: 14,
-                          color: _textDark,
+                          color: colors.secondary,
                         ),
                       ],
                     ),
@@ -436,7 +361,7 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ColorScheme colors) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
@@ -444,32 +369,35 @@ class _MyPurchasedRecipesState extends State<MyPurchasedRecipes> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 84,
-              height: 84,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8F5E9),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colors.tertiary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shopping_bag_outlined,
-                size: 40,
-                color: Color(0xFF2E7D32),
+                size: 46,
+                color: colors.tertiary,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Aún no tienes recetas compradas',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: _textDark,
+                color: colors.secondary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Las recetas que compres aparecerán aquí con acceso vitalicio a su preparación paso a paso.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13.5, color: _textMuted, height: 1.4),
+              style: TextStyle(
+                fontSize: 13.5,
+                color: colors.onSurface.withValues(alpha: 0.6),
+                height: 1.4,
+              ),
             ),
           ],
         ),

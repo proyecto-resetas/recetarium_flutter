@@ -3,10 +3,12 @@ import 'package:resetas/src/features/auth/ui/login_screen.dart';
 import 'package:resetas/src/features/auth/ui/register_screen.dart';
 import 'package:resetas/src/features/recipes/ui/home_screen.dart';
 import 'package:resetas/src/features/admin/ui/admin_home_screen.dart';
+import 'package:resetas/src/features/admin/ui/super_admin_panel_screen.dart';
 import 'package:resetas/src/features/user_profile/ui/my_profile_screen.dart';
 import 'package:resetas/src/features/shopping_cart/ui/car_shop.screen.dart';
 import 'package:resetas/src/core/widgets/MyScrollableWidget.dart';
 import 'package:resetas/src/features/auth/ui/otp_verification_screen.dart';
+import 'package:resetas/src/features/auth/ui/forgot_password_screen.dart';
 import 'package:resetas/src/features/auth/data/auth_provider.dart';
 import 'package:resetas/src/features/recipes/models/recipes_model.dart';
 import 'package:resetas/src/features/recipes/ui/recipes_details.screen.dart';
@@ -21,7 +23,8 @@ class AppRouter {
         final bool isAuthenticated = authProvider.isAuthenticated;
         final bool isAuthRoute = state.matchedLocation == '/login' ||
             state.matchedLocation == '/register' ||
-            state.matchedLocation == '/otp_verification';
+            state.matchedLocation == '/otp_verification' ||
+            state.matchedLocation == '/forgot_password';
 
         // Si el usuario no está autenticado y no está en una ruta de auth, redirigir al login
         if (!isAuthenticated && !isAuthRoute) {
@@ -30,8 +33,11 @@ class AppRouter {
 
         // Si el usuario está autenticado e intenta ir al login o registro, redirigir al home
         if (isAuthenticated && isAuthRoute) {
-          // Si es admin, redirigir a admin_home, si no a home
-          return authProvider.user?.role == 'admin' ? '/admin_home' : '/home';
+          final role = authProvider.user?.role;
+          // Si es admin o super_admin, redirigir a admin_home, si no a home
+          return (role == 'admin' || role == 'super_admin')
+              ? '/admin_home'
+              : '/home';
         }
 
         return null;
@@ -52,6 +58,10 @@ class AppRouter {
         GoRoute(
           path: '/admin_home',
           builder: (context, state) => const AdminHomeScreen(),
+        ),
+        GoRoute(
+          path: '/super_admin',
+          builder: (context, state) => const SuperAdminPanelScreen(),
         ),
         GoRoute(
           path: '/recipes_details',
@@ -95,6 +105,11 @@ class AppRouter {
           path: '/otp_verification',
           builder: (context, state) =>
               OtpVerificationScreen(email: state.extra as String? ?? ''),
+        ),
+        GoRoute(
+          path: '/forgot_password',
+          builder: (context, state) =>
+              ForgotPasswordScreen(initialEmail: state.extra as String? ?? ''),
         ),
       ],
     );

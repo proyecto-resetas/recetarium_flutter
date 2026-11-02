@@ -139,32 +139,54 @@ void clearListRecipe() {
   }
 
   Future<bool> createRecipes(RecipesModel recipe) async {
-
     final effectiveToken = _localStorageService.token;
     if (effectiveToken == null) return false;
 
     try {
-      final recipeCreatedResponse = await recetasAPI.createRecipe(recipe, effectiveToken);
+      // Subir la imagen a S3 únicamente en el momento de guardar la receta en la BD
+      if (_selectedImage != null && _uploadedImageUrl == null) {
+        await uploadImage();
+      }
+
+      final recipeToSave = RecipesModel(
+        id: recipe.id,
+        nameRecipe: recipe.nameRecipe,
+        descriptionRecipe: recipe.descriptionRecipe,
+        ingredientsRecipe: recipe.ingredientsRecipe,
+        utensilRecipe: recipe.utensilRecipe,
+        category: recipe.category,
+        level: recipe.level,
+        imageUrl: _uploadedImageUrl ?? recipe.imageUrl,
+        createdBy: recipe.createdBy,
+        price: recipe.price,
+        steps: recipe.steps,
+      );
+
+      final recipeCreatedResponse =
+          await recetasAPI.createRecipe(recipeToSave, effectiveToken);
 
       recipeCreatedRes = recipeCreatedResponse;
-      if(recipeCreatedRes != null){
-           notifyListeners();
-           return true; 
+      if (recipeCreatedRes != null) {
+        notifyListeners();
+        return true;
       }
-     
-      return false; 
+
+      return false;
     } catch (e) {
-      return false; 
+      print('Error en createRecipes: $e');
+      return false;
     }
   }
 
-  // Método para seleccionar imagen
+  // Método para seleccionar imagen (se subirá a S3 al guardar la receta)
   Future<void> pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       _selectedImage = pickedFile;
+      _uploadedImageUrl = null;
+      _uploadedOriginalFileName = pickedFile.name;
       notifyListeners();
     }
   }
@@ -235,6 +257,140 @@ void clearListRecipe() {
     notifyListeners();
   }
 
+  static const List<String> _validCategories = [
+    'Entrada',
+    'Aperitivo',
+    'Plato Fuerte',
+    'Postre',
+    'Sopa',
+    'Ensalada',
+    'Guarnicion',
+    'Salsa',
+    'Italiana',
+    'Principal',
+  ];
+
+  static const List<String> _validLevels = [
+    'Basico',
+    'Intermedio',
+    'Avanzado',
+  ];
+
+  int _parseTimeToMilliseconds(String timeString, dynamic rawTimeScreen) {
+    final RegExp regExp = RegExp(r'(\d+)\s*([hms])', caseSensitive: false);
+    int totalMilliseconds = 0;
+
+    for (final match in regExp.allMatches(timeString)) {
+      final int value = int.tryParse(match.group(1) ?? '0') ?? 0;
+      final String unit = (match.group(2) ?? 'm').toLowerCase();
+
+      switch (unit) {
+        case 'h':
+          totalMilliseconds += value * 60 * 60 * 1000;
+          break;
+        case 'm':
+          totalMilliseconds += value * 60 * 1000;
+          break;
+        case 's':
+          totalMilliseconds += value * 1000;
+          break;
+      }
+    }
+
+    if (totalMilliseconds > 0) {
+      return totalMilliseconds;
+    }
+
+    final parsedRaw = rawTimeScreen is int
+        ? rawTimeScreen
+        : int.tryParse(rawTimeScreen?.toString() ?? '0') ?? 0;
+    // Si viene en minutos pequeños (ej. 10 en lugar de 600000 ms), convertir a ms
+    if (parsedRaw > 0 && parsedRaw < 1000) {
+      return parsedRaw * 60 * 1000;
+    }
+    return parsedRaw > 0 ? parsedRaw : 60000;
+  }
+
+  void _applyAiAnalysisResult(Map<String, dynamic> analysis) {
+    _selectedNameRecipe = analysis['nameRecipe']?.toString().trim();
+    final rawDesc = analysis['descriptionRecipe']?.toString().trim() ?? '';
+    _selectedDescriptionRecipe =
+        rawDesc.length > 200 ? rawDesc.substring(0, 200) : rawDesc;
+
+    final rawPrice = analysis['price'];
+    if (rawPrice is num) {
+      _selectedPrice = rawPrice.toInt();
+    } else if (rawPrice != null) {
+      _selectedPrice = num.tryParse(rawPrice.toString())?.toInt() ?? 0;
+    } else {
+      _selectedPrice = 0;
+    }
+
+    final rawLevel = (analysis['level']?.toString().trim() ?? '')
+        .replaceAll('á', 'a')
+        .replaceAll('Á', 'A');
+    _selectedLevel = _validLevels.firstWhere(
+      (l) => l.toLowerCase() == rawLevel.toLowerCase(),
+      orElse: () => 'Basico',
+    );
+
+    final rawCategory = (analysis['category']?.toString().trim() ?? '')
+        .replaceAll('ó', 'o')
+        .replaceAll('Ó', 'O');
+    _selectedCategory = _validCategories.firstWhere(
+      (c) => c.toLowerCase() == rawCategory.toLowerCase(),
+      orElse: () => 'Plato Fuerte',
+    );
+
+    // Autocompletar ingredientes
+    clearIngredients();
+    if (analysis['ingredientsRecipe'] is List) {
+      for (var item in analysis['ingredientsRecipe']) {
+        if (item is Map) {
+          final desc = item['description']?.toString().trim() ?? '';
+          final amt = item['amount']?.toString().trim() ?? '';
+          if (desc.isNotEmpty) {
+            addIngredient(desc, amt.isNotEmpty ? amt : 'Al gusto');
+          }
+        }
+      }
+    }
+
+    // Autocompletar utensilios
+    clearUtensils();
+    if (analysis['utensilRecipe'] is List) {
+      for (var item in analysis['utensilRecipe']) {
+        if (item is Map) {
+          final ut = item['utensil']?.toString().trim() ?? '';
+          if (ut.isNotEmpty) addUtensil(ut);
+        } else if (item is String && item.trim().isNotEmpty) {
+          addUtensil(item.trim());
+        }
+      }
+    }
+
+    // Autocompletar pasos
+    clearSteps();
+    if (analysis['steps'] is List) {
+      for (var item in analysis['steps']) {
+        if (item is Map) {
+          final stepDesc = item['description']?.toString().trim() ?? '';
+          if (stepDesc.isEmpty) continue;
+          final timeStr = item['time']?.toString().trim() ?? '5m';
+          final timeScreenMs =
+              _parseTimeToMilliseconds(timeStr, item['timeScreen']);
+          addStep(
+            stepDesc,
+            timeStr,
+            timeScreenMs,
+          );
+        }
+      }
+    }
+
+    notifyListeners();
+  }
+
   Future<bool> analyzeRecipeImage() async {
     if (_analysisImage == null) return false;
     final token = _localStorageService.token;
@@ -243,42 +399,31 @@ void clearListRecipe() {
     try {
       final analysis = await recetasAPI.analyzeImage(_analysisImage!, token);
       if (analysis != null) {
-        _selectedNameRecipe = analysis['nameRecipe'];
-        _selectedDescriptionRecipe = analysis['descriptionRecipe'];
-        _selectedPrice = analysis['price'];
-        _selectedLevel = analysis['level'];
-        _selectedCategory = analysis['category'];
-
-        // Autocompletar ingredientes
-        clearIngredients();
-        if (analysis['ingredientsRecipe'] != null) {
-          for (var item in analysis['ingredientsRecipe']) {
-            addIngredient(item['description'] ?? '', item['amount'] ?? '');
-          }
-        }
-
-        // Autocompletar utensilios
-        clearUtensils();
-        if (analysis['utensilRecipe'] != null) {
-          for (var item in analysis['utensilRecipe']) {
-            addUtensil(item['utensil'] ?? '');
-          }
-        }
-
-        // Autocompletar pasos
-        clearSteps();
-        if (analysis['steps'] != null) {
-          for (var item in analysis['steps']) {
-            addStep(item['description'] ?? '', item['time'] ?? '', item['timeScreen'] ?? 0);
-          }
-        }
-
-        notifyListeners();
+        _applyAiAnalysisResult(analysis);
         return true;
       }
       return false;
     } catch (e) {
       print('Error en analyzeRecipeImage: $e');
+      return false;
+    }
+  }
+
+  Future<bool> analyzeRecipeText(String rawText) async {
+    if (rawText.trim().isEmpty) return false;
+    final token = _localStorageService.token;
+    if (token == null) return false;
+
+    try {
+      final analysis =
+          await recetasAPI.analyzeRecipeText(rawText.trim(), token);
+      if (analysis != null) {
+        _applyAiAnalysisResult(analysis);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error en analyzeRecipeText: $e');
       return false;
     }
   }

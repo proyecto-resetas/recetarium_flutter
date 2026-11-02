@@ -113,6 +113,49 @@ class RecipesApiService {
     }
   }
 
+  // Eliminar una receta (exclusivo super_admin)
+  Future<bool> deleteRecipe(String recipeId) async {
+    try {
+      final response = await _dio.delete(
+        '/Recipes/$recipeId',
+        options: Options(
+          headers: {
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Actualizar una receta existente
+  Future<RecipesModel?> updateRecipe(
+    String recipeId,
+    Map<String, dynamic> updateData,
+  ) async {
+    try {
+      final response = await _dio.patch(
+        '/Recipes/update/$recipeId',
+        data: updateData,
+        options: Options(
+          headers: {
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data is Map<String, dynamic>) {
+          return RecipesModel.fromJsonModel(response.data);
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Subir imagen a S3
   Future<UploadImageResponse?> uploadImage(XFile imageFile) async {
     try {
@@ -361,6 +404,38 @@ class RecipesApiService {
     } catch (e) {
       print('Error al analizar imagen: $e');
       throw Exception('Error al analizar imagen: $e');
+    }
+  }
+
+  // Analizar texto libre con IA para organizar y autocompletar receta
+  Future<Map<String, dynamic>?> analyzeRecipeText(
+    String text,
+    String token,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/Recipes/analyze-text',
+        data: {
+          'text': text,
+          'provider': Config.aiProvider,
+        },
+        options: Options(
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(milliseconds: 600000),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return response.data['response'];
+      }
+      return null;
+    } catch (e) {
+      print('Error al analizar texto con IA: $e');
+      throw Exception('Error al analizar texto con IA: $e');
     }
   }
 

@@ -97,7 +97,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          // Acción olvidaste contraseña
+                          context.push(
+                            '/forgot_password',
+                            extra: emailController.text.trim(),
+                          );
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
