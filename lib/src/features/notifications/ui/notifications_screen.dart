@@ -15,11 +15,9 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  static const Color _brandOrange = Color(0xFFF26625);
-  static const Color _bgWarm = Color(0xFFFAF8F5);
-  static const Color _unreadCardBg = Color(0xFFFFF6F0);
-  static const Color _textDark = Color(0xFF1E1E1E);
-  static const Color _textMuted = Color(0xFF757575);
+  static const Color _bgPage = Color(0xFFF8F9FA);
+  static const Color _textDark = Color(0xFF1A1D1E);
+  static const Color _textMuted = Color(0xFF6B7280);
 
   String _selectedFilter = 'all'; // all, unread, purchases, gifts, favorites
 
@@ -102,43 +100,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final provider = context.watch<NotificationsProvider>();
     final filtered = _filterNotifications(provider.notifications);
     final todayList = filtered.where((n) => _isToday(n.createdAt)).toList();
     final olderList = filtered.where((n) => !_isToday(n.createdAt)).toList();
 
     return Scaffold(
-      backgroundColor: _bgWarm,
+      backgroundColor: _bgPage,
       appBar: CustomBackAppBar(
-        backgroundColor: _bgWarm,
+        backgroundColor: _bgPage,
         title: 'Notificaciones',
         actions: [
-          // Botón para probar notificación WebSocket + Push en vivo
-          IconButton(
-            tooltip: 'Enviar notificación de prueba en vivo',
-            onPressed: () async {
-              await provider.sendTestNotification();
-            },
-            icon: const Icon(
-              Icons.bolt_rounded,
-              color: _brandOrange,
-              size: 22,
-            ),
-          ),
           if (provider.unreadCount > 0)
             Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 10),
               child: TextButton.icon(
                 onPressed: provider.markAllAsRead,
-                icon: const Icon(
+                icon: Icon(
                   Icons.done_all_rounded,
                   size: 18,
-                  color: _textDark,
+                  color: colors.secondary,
                 ),
-                label: const Text(
+                label: Text(
                   'Leer todas',
                   style: TextStyle(
-                    color: _textDark,
+                    color: colors.secondary,
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
@@ -149,225 +136,248 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          color: _brandOrange,
+          color: colors.secondary,
           onRefresh: provider.fetchNotifications,
           child: CustomScrollView(
-          slivers: [
-            // ─── Cabecera: Logo + "Notificaciones" + Badge "X nuevas" ───────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFECE2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Image.asset(
-                            'assets/icon/recetariumLogoxxl-03.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.notifications_rounded,
-                              color: _brandOrange,
-                              size: 22,
-                            ),
-                          ),
+            slivers: [
+              // ─── Banner resumen + estado en tiempo real ──────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Notificaciones',
-                          style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w900,
-                            color: _textDark,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        if (provider.unreadCount > 0) ...[
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 11,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _brandOrange,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${provider.unreadCount} ${provider.unreadCount == 1 ? 'nueva' : 'nuevas'}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ─── Filtros rápidos horizontales ─────────────────────────
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildFilterChip(
-                            id: 'all',
-                            label: 'Todas',
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterChip(
-                            id: 'unread',
-                            label: 'No leídas (${provider.unreadCount})',
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterChip(
-                            id: 'purchases',
-                            label: 'Compras',
-                            icon: Icons.shopping_bag_outlined,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterChip(
-                            id: 'gifts',
-                            label: 'Regalos',
-                            icon: Icons.card_giftcard_rounded,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterChip(
-                            id: 'favorites',
-                            label: 'Favoritos',
-                            icon: Icons.favorite_border_rounded,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ─── Estado de WebSocket en tiempo real y Push ────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          todayList.isNotEmpty ? 'HOY' : 'ACTIVIDAD',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            color: _textDark,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: provider.isSocketConnected
-                                    ? const Color(0xFF2E7D32)
-                                    : Colors.amber.shade700,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              provider.isSocketConnected
-                                  ? 'Conectado en tiempo real'
-                                  : 'Sincronizando WebSocket…',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: provider.isSocketConnected
-                                    ? const Color(0xFF2E7D32)
-                                    : Colors.amber.shade800,
-                              ),
+                        decoration: BoxDecoration(
+                          color: colors.secondary,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colors.secondary.withValues(alpha: 0.18),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.notifications_active_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    provider.unreadCount > 0
+                                        ? '${provider.unreadCount} ${provider.unreadCount == 1 ? 'notificación nueva' : 'notificaciones nuevas'}'
+                                        : 'Todo al día',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: BoxDecoration(
+                                          color: provider.isSocketConnected
+                                              ? const Color(0xFF69F0AE)
+                                              : colors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        provider.isSocketConnected
+                                            ? 'Conectado en tiempo real'
+                                            : 'Sincronizando…',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.85,
+                                          ),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (provider.unreadCount > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.primary,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${provider.unreadCount}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // ─── Filtros rápidos horizontales ───────────────────────
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildFilterChip(
+                              colors: colors,
+                              id: 'all',
+                              label: 'Todas',
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              colors: colors,
+                              id: 'unread',
+                              label: 'No leídas (${provider.unreadCount})',
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              colors: colors,
+                              id: 'purchases',
+                              label: 'Compras',
+                              icon: Icons.shopping_bag_outlined,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              colors: colors,
+                              id: 'gifts',
+                              label: 'Regalos',
+                              icon: Icons.card_giftcard_rounded,
+                            ),
+                            const SizedBox(width: 8),
+                            _buildFilterChip(
+                              colors: colors,
+                              id: 'favorites',
+                              label: 'Favoritos',
+                              icon: Icons.favorite_border_rounded,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (filtered.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          todayList.isNotEmpty ? 'HOY' : 'ACTIVIDAD',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: colors.secondary,
+                            letterSpacing: 0.7,
+                          ),
+                        ),
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // ─── Lista o Estado Vacío ───────────────────────────────────────
-            if (provider.isLoading && provider.notifications.isEmpty)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: CircularProgressIndicator(color: _brandOrange),
-                ),
-              )
-            else if (filtered.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _buildEmptyNotificationsState(provider),
-              )
-            else ...[
-              // Sección HOY
-              if (todayList.isNotEmpty)
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildNotificationCard(
-                        context,
-                        provider,
-                        todayList[index],
+              // ─── Lista o Estado Vacío ───────────────────────────────────────
+              if (provider.isLoading && provider.notifications.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: CircularProgressIndicator(color: colors.secondary),
+                  ),
+                )
+              else if (filtered.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _buildEmptyNotificationsState(colors),
+                )
+              else ...[
+                // Sección HOY
+                if (todayList.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildNotificationCard(
+                          context,
+                          colors,
+                          provider,
+                          todayList[index],
+                        ),
+                        childCount: todayList.length,
                       ),
-                      childCount: todayList.length,
                     ),
                   ),
-                ),
 
-              // Sección ANTERIORES / AYER
-              if (olderList.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
-                    child: const Text(
-                      'ANTERIORES',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: _textDark,
-                        letterSpacing: 0.6,
+                // Sección ANTERIORES
+                if (olderList.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                      child: Text(
+                        'ANTERIORES',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: colors.secondary,
+                          letterSpacing: 0.7,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildNotificationCard(
-                        context,
-                        provider,
-                        olderList[index],
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => _buildNotificationCard(
+                          context,
+                          colors,
+                          provider,
+                          olderList[index],
+                        ),
+                        childCount: olderList.length,
                       ),
-                      childCount: olderList.length,
                     ),
                   ),
-                ),
+                ],
               ],
             ],
-          ],
-        ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildFilterChip({
+    required ColorScheme colors,
     required String id,
     required String label,
     IconData? icon,
@@ -377,12 +387,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       onTap: () => setState(() => _selectedFilter = id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? _brandOrange : Colors.white,
+          color: selected ? colors.secondary : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: selected ? _brandOrange : const Color(0xFFD8D4CE),
+            color: selected ? colors.secondary : const Color(0xFFE5E7EB),
           ),
         ),
         child: Row(
@@ -412,10 +422,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationCard(
     BuildContext context,
+    ColorScheme colors,
     NotificationsProvider provider,
     NotificationModel item,
   ) {
-    final badgeConfig = _getBadgeConfig(item.type);
+    final badgeConfig = _getBadgeConfig(item.type, colors);
     final hasImage =
         item.recipeImage != null && item.recipeImage!.trim().isNotEmpty;
 
@@ -427,8 +438,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 22),
         alignment: Alignment.centerRight,
         decoration: BoxDecoration(
-          color: const Color(0xFFE53935),
-          borderRadius: BorderRadius.circular(20),
+          color: colors.error,
+          borderRadius: BorderRadius.circular(18),
         ),
         child: const Icon(
           Icons.delete_outline_rounded,
@@ -443,12 +454,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: item.read ? Colors.white : _unreadCardBg,
-            borderRadius: BorderRadius.circular(20),
+            color: item.read
+                ? Colors.white
+                : Color.alphaBlend(
+                    colors.primary.withValues(alpha: 0.06),
+                    Colors.white,
+                  ),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: item.read
-                  ? Colors.black.withValues(alpha: 0.04)
-                  : _brandOrange.withValues(alpha: 0.2),
+                  ? Colors.black.withValues(alpha: 0.05)
+                  : colors.primary.withValues(alpha: 0.45),
             ),
             boxShadow: [
               BoxShadow(
@@ -482,7 +498,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: badgeConfig.bgColor.withValues(alpha: 0.16),
+                          color: badgeConfig.bgColor.withValues(alpha: 0.14),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -492,7 +508,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                       ),
 
-                    // Punto naranja de no leído (arriba izquierda)
+                    // Punto de no leído (arriba izquierda)
                     if (!item.read)
                       Positioned(
                         top: -3,
@@ -501,7 +517,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           width: 11,
                           height: 11,
                           decoration: BoxDecoration(
-                            color: _brandOrange,
+                            color: colors.primary,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 1.5),
                           ),
@@ -541,7 +557,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       item.title,
                       style: const TextStyle(
-                        fontSize: 15.5,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: _textDark,
                         height: 1.2,
@@ -552,9 +568,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       item.message,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF3E3E3E),
+                        color: Color(0xFF4B5563),
                         fontWeight: FontWeight.w500,
-                        height: 1.3,
+                        height: 1.35,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -569,7 +585,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: _brandOrange,
+                              color: colors.secondary,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Row(
@@ -580,7 +596,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 SizedBox(width: 4),
@@ -614,37 +630,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  ({IconData icon, Color bgColor}) _getBadgeConfig(String type) {
+  ({IconData icon, Color bgColor}) _getBadgeConfig(
+    String type,
+    ColorScheme colors,
+  ) {
     switch (type) {
       case 'recipe_sold':
         return (
           icon: Icons.monetization_on_rounded,
-          bgColor: const Color(0xFFF28C25),
+          bgColor: colors.primary,
         );
       case 'recipe_gift':
         return (
           icon: Icons.card_giftcard_rounded,
-          bgColor: const Color(0xFFF26625),
+          bgColor: colors.primary,
         );
       case 'purchase_confirmed':
         return (
           icon: Icons.check_rounded,
-          bgColor: const Color(0xFF2E7D32),
+          bgColor: colors.tertiary,
         );
       case 'recipe_favorited':
         return (
           icon: Icons.favorite_border_rounded,
-          bgColor: const Color(0xFFE53935),
+          bgColor: colors.error,
         );
       default:
         return (
           icon: Icons.notifications_rounded,
-          bgColor: _brandOrange,
+          bgColor: colors.secondary,
         );
     }
   }
 
-  Widget _buildEmptyNotificationsState(NotificationsProvider provider) {
+  Widget _buildEmptyNotificationsState(ColorScheme colors) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -652,23 +671,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 90,
-              height: 90,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFF3EC),
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: colors.secondary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_none_rounded,
-                size: 44,
-                color: _brandOrange,
+                size: 42,
+                color: colors.secondary,
               ),
             ),
             const SizedBox(height: 18),
             const Text(
               'Aún no tienes notificaciones',
               style: TextStyle(
-                fontSize: 19,
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: _textDark,
               ),
@@ -680,30 +699,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               style: TextStyle(
                 fontSize: 13.5,
                 color: _textMuted,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 22),
-            ElevatedButton.icon(
-              onPressed: () async {
-                await provider.sendTestNotification();
-              },
-              icon: const Icon(Icons.bolt_rounded, size: 18),
-              label: const Text(
-                'Probar notificación en tiempo real',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _brandOrange,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                height: 1.45,
               ),
             ),
           ],
