@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_api_service.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
 
 class CarShopProvider extends ChangeNotifier {
   final RecipesApiService _recipesApiService = RecipesApiService();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/user_profile/models/user_model.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_api_service.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/user_profile/models/user_model.dart';
+import 'package:recetarium/src/core/services/local_storage_service.dart';
 
 class RecipeMyCreatedProvider extends ChangeNotifier {
   final RecipesApiService recetasAPI = RecipesApiService();

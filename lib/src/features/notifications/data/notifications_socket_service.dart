@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:resetas/src/core/config/env.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/notifications/models/notification_model.dart';
+import 'package:recetarium/src/core/config/env.dart';
+import 'package:recetarium/src/core/services/local_storage_service.dart';
+import 'package:recetarium/src/features/notifications/models/notification_model.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 class NotificationsSocketService {

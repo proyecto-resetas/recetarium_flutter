@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/theme/bootstrap_icons.dart';
-import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
-import 'package:resetas/src/features/shopping_cart/ui/car_shop.screen.dart';
-import 'package:resetas/src/features/shopping_cart/ui/my_purchased_recipes.dart';
-import 'package:resetas/src/features/recipes/ui/my_recipes_favorite.dart';
-import 'package:resetas/src/features/recipes/ui/explore_recipes_screen.dart';
-import 'package:resetas/src/features/notifications/data/notifications_provider.dart';
-import 'package:resetas/src/features/notifications/ui/live_notification_banner.dart';
+import 'package:recetarium/src/core/theme/bootstrap_icons.dart';
+import 'package:recetarium/src/features/shopping_cart/data/car_shop_provider.dart';
+import 'package:recetarium/src/features/shopping_cart/ui/car_shop.screen.dart';
+import 'package:recetarium/src/features/shopping_cart/ui/my_purchased_recipes.dart';
+import 'package:recetarium/src/features/recipes/ui/my_recipes_favorite.dart';
+import 'package:recetarium/src/features/recipes/ui/explore_recipes_screen.dart';
+import 'package:recetarium/src/features/notifications/data/notifications_provider.dart';
+import 'package:recetarium/src/features/notifications/ui/live_notification_banner.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resetas/src/core/widgets/custom_bottom_nav_bar.dart';
+import 'package:recetarium/src/core/widgets/custom_bottom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

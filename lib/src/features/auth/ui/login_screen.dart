@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/l10n/app_localizations.dart';
-import 'package:resetas/src/features/auth/models/login_request_model.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/core/utils/input_sanitizers.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/l10n/app_localizations.dart';
+import 'package:recetarium/src/features/auth/models/login_request_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,9 +72,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       hintText: l10n.emailHint,
                       prefixIcon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
+                      maxLength: 100,
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        final trimmed = value?.trim() ?? '';
+                        if (trimmed.isEmpty) {
                           return l10n.pleaseEnterEmail;
+                        }
+                        if (!InputSanitizers.isValidEmail(trimmed)) {
+                          return 'Ingresa un correo electrónico válido (ej: nombre@dominio.com)';
                         }
                         return null;
                       },
@@ -124,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
                           LoginRequestModel loginRequestModel = LoginRequestModel(
-                            email: emailController.text,
+                            email: emailController.text.trim(),
                             password: passwordController.text,
                           );
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/recipes/models/steps_model.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_api_service.dart';
+import 'package:recetarium/src/core/services/local_storage_service.dart';
+import 'package:recetarium/src/features/recipes/models/steps_model.dart';
 
 class StepsProvider with ChangeNotifier {
   final RecipesApiService _recipesApiService = RecipesApiService();

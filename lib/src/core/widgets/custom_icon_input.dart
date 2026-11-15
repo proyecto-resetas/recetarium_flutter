@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomIconInput extends StatefulWidget {
@@ -7,6 +8,8 @@ class CustomIconInput extends StatefulWidget {
   final String hintText;
   final dynamic prefixIcon; // Puede ser IconData o String (ruta SVG)
   final VoidCallback? onCleared;
+  final VoidCallback? onAddTag;
+  final String addTagTooltip;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final TextInputAction textInputAction;
@@ -15,6 +18,8 @@ class CustomIconInput extends StatefulWidget {
   final int? maxLength;
   final TextInputType keyboardType;
   final bool isPassword;
+  final List<TextInputFormatter>? inputFormatters;
+  final String? helperText;
 
   const CustomIconInput({
     super.key,
@@ -23,6 +28,8 @@ class CustomIconInput extends StatefulWidget {
     this.hintText = 'Buscar...',
     this.prefixIcon,
     this.onCleared,
+    this.onAddTag,
+    this.addTagTooltip = 'Agregar ingrediente',
     this.onChanged,
     this.onSubmitted,
     this.textInputAction = TextInputAction.done,
@@ -31,6 +38,8 @@ class CustomIconInput extends StatefulWidget {
     this.maxLength,
     this.keyboardType = TextInputType.text,
     this.isPassword = false,
+    this.inputFormatters,
+    this.helperText,
   });
 
   @override
@@ -39,11 +48,37 @@ class CustomIconInput extends StatefulWidget {
 
 class _CustomIconInputState extends State<CustomIconInput> {
   bool _obscureText = true;
+  late String _lastText;
+
+  void _handleControllerChanged() {
+    if (_lastText != widget.controller.text && mounted) {
+      _lastText = widget.controller.text;
+      setState(() {});
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.isPassword;
+    _lastText = widget.controller.text;
+    widget.controller.addListener(_handleControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant CustomIconInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleControllerChanged);
+      _lastText = widget.controller.text;
+      widget.controller.addListener(_handleControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleControllerChanged);
+    super.dispose();
   }
 
   @override
@@ -82,9 +117,17 @@ class _CustomIconInputState extends State<CustomIconInput> {
             maxLines: widget.isPassword ? 1 : widget.maxLines,
             maxLength: widget.maxLength,
             keyboardType: widget.keyboardType,
+            inputFormatters: widget.inputFormatters,
             decoration: InputDecoration(
               hintText: widget.hintText,
               hintStyle: TextStyle(color: colors.onSurface.withValues(alpha: 0.45)),
+              helperText: widget.helperText,
+              helperMaxLines: 2,
+              helperStyle: TextStyle(
+                fontSize: 11.5,
+                color: colors.onSurface.withValues(alpha: 0.6),
+              ),
+              errorMaxLines: 2,
               prefixIcon: _buildPrefixIcon(colors.secondary),
               suffixIcon: _buildSuffixIcon(colors),
               border: InputBorder.none,
@@ -145,17 +188,50 @@ class _CustomIconInputState extends State<CustomIconInput> {
       );
     }
 
-    if (widget.controller.text.isNotEmpty && widget.onCleared != null) {
-      return IconButton(
-        icon: const Icon(Icons.clear_rounded, size: 20),
-        onPressed: () {
-          widget.controller.clear();
-          widget.onCleared!();
-          setState(() {});
-        },
-      );
-    }
+    final hasText = widget.controller.text.isNotEmpty;
+    final hasTrimmedText = widget.controller.text.trim().isNotEmpty;
+    final showAdd = widget.onAddTag != null && hasTrimmedText;
+    final showClear = hasText && widget.onCleared != null;
 
-    return null;
+    if (!showAdd && !showClear) return null;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showAdd)
+          Padding(
+            padding: EdgeInsets.only(right: showClear ? 2 : 8),
+            child: Tooltip(
+              message: widget.addTagTooltip,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: widget.onAddTag,
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: colors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (showClear)
+          IconButton(
+            icon: const Icon(Icons.clear_rounded, size: 20),
+            onPressed: () {
+              widget.controller.clear();
+              widget.onCleared!();
+              setState(() {});
+            },
+          ),
+      ],
+    );
   }
 }

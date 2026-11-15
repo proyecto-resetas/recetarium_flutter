@@ -1,27 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:resetas/src/core/config/env.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/notifications/models/notification_model.dart';
+import 'package:recetarium/src/core/api/auth_interceptor.dart';
+import 'package:recetarium/src/core/config/env.dart';
+import 'package:recetarium/src/features/notifications/models/notification_model.dart';
 
 class NotificationsApiService {
   final Dio _dio = Dio();
-  final LocalStorageService _storage = LocalStorageService();
 
   NotificationsApiService() {
     _dio.options.baseUrl = Env.apiUrlDev;
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final token = _storage.token;
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          options.headers['x-api-key'] = Env.xapikey;
-          return handler.next(options);
-        },
-      ),
-    );
+    _dio.options.headers['x-api-key'] = Env.xapikey;
+    _dio.interceptors.add(AuthInterceptor(_dio));
   }
 
   Future<({List<NotificationModel> notifications, int unreadCount})>

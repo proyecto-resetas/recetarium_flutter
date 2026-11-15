@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,21 +18,54 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Descubre, crea y comparte recetas con Recetarium.">
+  <meta name="theme-color" content="#FFA740">
 
   <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="recetarium">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Recetarium">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="../assets/images/recetas-03.png"/>
+  <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>Recetarium</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Pantalla de carga mientras se descarga el motor de Flutter */
+    html, body { margin: 0; height: 100%; background: #F5F5F5; }
+    #splash {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #F5F5F5;
+      transition: opacity .3s ease;
+    }
+    #splash img { width: 128px; height: 128px; }
+  </style>
 </head>
 <body>
+  <div id="splash"><img src="icons/Icon-192.png" alt="Recetarium"></div>
+  <script>
+    // Oculta el splash cuando Flutter pinta su primer frame
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash');
+      if (s) { s.style.opacity = '0'; setTimeout(function () { s.remove(); }, 300); }
+    });
+  </script>
+  <script>
+    // Registrar el service worker de la PWA (caché offline)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('recetarium_sw.js').catch(function (e) {
+          console.warn('No se pudo registrar el service worker:', e);
+        });
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

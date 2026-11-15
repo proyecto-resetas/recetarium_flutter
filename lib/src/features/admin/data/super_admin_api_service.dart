@@ -1,11 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:resetas/src/core/config/config.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/core/api/auth_interceptor.dart';
+import 'package:recetarium/src/core/config/config.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
 
 class SuperAdminApiService {
   late final Dio _dio;
-  final LocalStorageService _localStorageService = LocalStorageService();
 
   SuperAdminApiService() {
     _dio = Dio(
@@ -17,18 +16,7 @@ class SuperAdminApiService {
     );
 
     _dio.options.headers['x-api-key'] = Config.xapikey;
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          options.headers['x-api-key'] ??= Config.xapikey;
-          final token = _localStorageService.token;
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
-      ),
-    );
+    _dio.interceptors.add(AuthInterceptor(_dio));
   }
 
   Future<Map<String, dynamic>?> getDashboardStats() async {
@@ -145,6 +133,88 @@ class SuperAdminApiService {
       return null;
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<bool> deleteRole(String roleId) async {
+    try {
+      final response = await _dio.delete('/roles/$roleId');
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllPermissions() async {
+    try {
+      final response = await _dio.get(
+        '/roles/permissions/catalog',
+        queryParameters: {'includeInactive': 'true'},
+      );
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List)
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> createPermission({
+    required String key,
+    required String name,
+    required String module,
+    String? description,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/roles/permissions',
+        data: {
+          'key': key,
+          'name': name,
+          'module': module,
+          if (description != null && description.isNotEmpty)
+            'description': description,
+          'isActive': true,
+        },
+      );
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> updatePermission(
+    String permissionId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _dio.patch(
+        '/roles/permissions/$permissionId',
+        data: data,
+      );
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data is Map<String, dynamic>) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> deletePermission(String permissionId) async {
+    try {
+      final response = await _dio.delete('/roles/permissions/$permissionId');
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
     }
   }
 

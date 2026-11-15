@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/core/utils/input_sanitizers.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
 
 class CreateDynamicInputs extends StatefulWidget {
   const CreateDynamicInputs({super.key});
@@ -12,7 +13,6 @@ class CreateDynamicInputs extends StatefulWidget {
 }
 
 class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
-  // Lista para almacenar los controladores de los inputs
   final List<TextEditingController> _controllersD = [];
   final List<TextEditingController> _controllersT = [];
 
@@ -33,54 +33,73 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
       _controllersD.add(TextEditingController());
       _controllersT.add(TextEditingController());
     }
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _syncStepsToGlobalState(),
+    );
   }
 
-  // Función para agregar un nuevo input dinámico
+  /// Sincroniza automáticamente los pasos en el estado temporal de
+  /// [ViewRecipesProvider] sin necesidad de botón "Save Steps".
+  void _syncStepsToGlobalState() {
+    if (!mounted) return;
+    final viewRecipesProvider =
+        Provider.of<ViewRecipesProvider>(context, listen: false);
+
+    final stepsList = <Map<String, dynamic>>[];
+    for (int i = 0; i < _controllersD.length; i++) {
+      final description = _controllersD[i].text;
+      final time = _controllersT[i].text;
+      final timeScreen = timeStringToMilliseconds(time);
+      stepsList.add({
+        'description': description,
+        'time': time,
+        'timeScreen': timeScreen,
+      });
+    }
+    viewRecipesProvider.syncSteps(stepsList);
+  }
+
   void _addInput() {
     setState(() {
-      _controllersD.add(TextEditingController()); // Agrega un nuevo controlador de texto
-      _controllersT.add(TextEditingController()); // Agrega un nuevo controlador de texto
+      _controllersD.add(TextEditingController());
+      _controllersT.add(TextEditingController());
     });
+    _syncStepsToGlobalState();
   }
 
-  // Función para guardar los valores de los inputs en el estado global
-  void _saveStepsToGlobalState(BuildContext context) {
-    final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context, listen: false);
+  void _removeStepAt(int index) {
+    if (_controllersD.length <= 1) return;
+    setState(() {
+      _controllersD.removeAt(index).dispose();
+      _controllersT.removeAt(index).dispose();
+    });
+    _syncStepsToGlobalState();
+  }
 
-    viewRecipesProvider.clearSteps();
-    for (int i = 0; i < _controllersD.length; i++) {
-      String description = _controllersD[i].text;
-      String time = _controllersT[i].text;
-      int timeScreen = timeStringToMilliseconds(_controllersT[i].text);
+  int timeStringToMilliseconds(String timeString) {
+    final RegExp regExp = RegExp(r'(\d+)\s*([hms])', caseSensitive: false);
+    int totalMilliseconds = 0;
 
+    for (final match in regExp.allMatches(timeString)) {
+      final int value = int.tryParse(match.group(1) ?? '0') ?? 0;
+      final String unit = (match.group(2) ?? 'm').toLowerCase();
 
-      viewRecipesProvider.addStep(description, time, timeScreen); // Guarda el paso en el estado global
+      switch (unit) {
+        case 'h':
+          totalMilliseconds += value * 60 * 60 * 1000;
+          break;
+        case 'm':
+          totalMilliseconds += value * 60 * 1000;
+          break;
+        case 's':
+          totalMilliseconds += value * 1000;
+          break;
+      }
     }
+
+    return totalMilliseconds > 0 ? totalMilliseconds : 60000;
   }
-
-    int timeStringToMilliseconds(String timeString) {
-  final RegExp regExp = RegExp(r'(\d+)([hms])');
-  int totalMilliseconds = 0;
-
-  for (final match in regExp.allMatches(timeString)) {
-    final int value = int.parse(match.group(1)!);
-    final String unit = match.group(2)!;
-
-    switch (unit) {
-      case 'h':
-        totalMilliseconds += value * 60 * 60 * 1000;
-        break;
-      case 'm':
-        totalMilliseconds += value * 60 * 1000;
-        break;
-      case 's':
-        totalMilliseconds += value * 1000;
-        break;
-    }
-  }
-
-  return totalMilliseconds;
-}
 
   @override
   Widget build(BuildContext context) {
@@ -101,27 +120,56 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
                     padding: const EdgeInsets.only(bottom: 15.0),
                     child: Column(
                       children: [
-                        CustomIconInput(
-                          controller: _controllersD[index],
-                          hintText: 'Step ${index + 1} description',
-                          prefixIcon: Icons.format_list_numbered_rounded,
-                          maxLines: 2,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter the description';
-                            }
-                            return null;
-                          },
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: CustomIconInput(
+                                controller: _controllersD[index],
+                                hintText: 'Describe el paso ${index + 1}',
+                                helperText: 'Máximo 280 caracteres.',
+                                prefixIcon: Icons.format_list_numbered_rounded,
+                                maxLines: 2,
+                                maxLength: 280,
+                                inputFormatters: InputSanitizers.safeText,
+                                onChanged: (_) => _syncStepsToGlobalState(),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Ingresa la descripción del paso';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            if (_controllersD.length > 1) ...[
+                              const SizedBox(width: 8),
+                              IconButton(
+                                tooltip: 'Eliminar paso',
+                                onPressed: () => _removeStepAt(index),
+                                icon: const Icon(
+                                  Icons.remove_circle_outline_rounded,
+                                  color: Color(0xFFD62828),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 10),
                         CustomIconInput(
                           controller: _controllersT[index],
-                          hintText: 'Time (e.g. 1h 30m, 15m, 45s)',
+                          hintText: 'Ej: 1h 30m, 15m, 45s',
+                          helperText: 'Usa h (horas), m (minutos) o s (segundos).',
                           prefixIcon: Icons.timer_outlined,
                           keyboardType: TextInputType.text,
+                          maxLength: 20,
+                          inputFormatters: InputSanitizers.stepTime,
+                          onChanged: (_) => _syncStepsToGlobalState(),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter the Time';
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Ingresa el tiempo del paso';
+                            }
+                            if (!InputSanitizers.isValidStepTime(value)) {
+                              return 'Formato inválido (ej: 15m, 1h 30m, 45s)';
                             }
                             return null;
                           },
@@ -133,32 +181,12 @@ class _CreateDynamicInputsState extends State<CreateDynamicInputs> {
               ),
             ),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: CustomMainButton(
-                    text: 'Add Step',
-                    icon: Icons.add_circle_outline_rounded,
-                    height: 45,
-                    color: colorScheme.secondary,
-                    onPressed: _addInput,
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: CustomMainButton(
-                    text: 'Save Steps',
-                    icon: Icons.save_rounded,
-                    height: 45,
-                    onPressed: () {
-                      _saveStepsToGlobalState(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Steps saved locally')),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            CustomMainButton(
+              text: 'Add Step',
+              icon: Icons.add_circle_outline_rounded,
+              height: 45,
+              color: colorScheme.secondary,
+              onPressed: _addInput,
             ),
           ],
         ),

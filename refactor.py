@@ -57,7 +57,7 @@ for k, v in moves.items():
         os.makedirs(os.path.dirname(v), exist_ok=True)
         shutil.move(k, v)
 
-package_name = 'resetas'
+package_name = 'recetarium'
 
 import_map = {}
 for k, v in moves.items():

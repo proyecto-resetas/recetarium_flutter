@@ -8,6 +8,10 @@
 	<string>Se necesita acceso a la cámara para tomar una foto.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Se necesita acceso al micrófono para grabar video.</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Este identificador se usará para mostrarte anuncios relevantes de gastronomía y recetas gratuitas.</string>
 
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

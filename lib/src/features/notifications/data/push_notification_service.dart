@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/notifications/data/notifications_api_service.dart';
-import 'package:resetas/src/features/notifications/models/notification_model.dart';
+import 'package:recetarium/src/core/services/local_storage_service.dart';
+import 'package:recetarium/src/features/notifications/data/notifications_api_service.dart';
+import 'package:recetarium/src/features/notifications/models/notification_model.dart';
 
 /// Handler de nivel superior requerido por `firebase_messaging` para procesar
 /// notificaciones Push cuando la aplicación está en segundo plano o terminada.
@@ -43,6 +43,19 @@ class PushNotificationService {
   }) async {
     if (_initialized) return;
     _initialized = true;
+
+    // En la PWA (web) Firebase necesita `FirebaseOptions` explícitas
+    // (generadas con `flutterfire configure`) y `web/firebase-messaging-sw.js`.
+    // Mientras no estén configuradas, las notificaciones en web funcionan
+    // únicamente en tiempo real mediante WebSocket.
+    if (kIsWeb && Firebase.apps.isEmpty) {
+      _firebaseAvailable = false;
+      debugPrint(
+        'ℹ️ Push web deshabilitado: falta la configuración web de Firebase. '
+        'Las notificaciones operarán mediante WebSocket.',
+      );
+      return;
+    }
 
     try {
       if (Firebase.apps.isEmpty) {

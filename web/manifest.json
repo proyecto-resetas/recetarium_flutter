@@ -1,12 +1,24 @@
 {
-    "name": "resetas",
-    "short_name": "resetas",
+    "id": "/",
+    "name": "Recetarium",
+    "short_name": "Recetarium",
+    "description": "Descubre, crea y comparte recetas con Recetarium.",
+    "lang": "es",
+    "dir": "ltr",
     "start_url": ".",
+    "scope": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "display_override": [
+        "standalone",
+        "minimal-ui"
+    ],
+    "background_color": "#F5F5F5",
+    "theme_color": "#FFA740",
     "orientation": "portrait-primary",
+    "categories": [
+        "food",
+        "lifestyle"
+    ],
     "prefer_related_applications": false,
     "icons": [
         {

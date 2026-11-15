@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "resetas" "\0"
+            VALUE "FileDescription", "Recetarium" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "resetas" "\0"
+            VALUE "InternalName", "Recetarium" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "resetas.exe" "\0"
-            VALUE "ProductName", "resetas" "\0"
+            VALUE "OriginalFilename", "recetarium.exe" "\0"
+            VALUE "ProductName", "Recetarium" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

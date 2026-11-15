@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/recipes/data/recipes_api_service.dart';
-import 'package:resetas/src/features/recipes/models/image_s3_model.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/models/ingredients_model.dart';
-import 'package:resetas/src/features/recipes/models/utensil_model.dart';
+import 'package:recetarium/src/core/services/local_storage_service.dart';
+import 'package:recetarium/src/features/recipes/data/ingredient_matcher.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_api_service.dart';
+import 'package:recetarium/src/features/recipes/models/image_s3_model.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/models/ingredients_model.dart';
+import 'package:recetarium/src/features/recipes/models/utensil_model.dart';
 
 class ViewRecipesProvider extends ChangeNotifier {
 
@@ -14,6 +15,7 @@ class ViewRecipesProvider extends ChangeNotifier {
   final RecipesApiService recetasAPI = RecipesApiService();
   final LocalStorageService _localStorageService = LocalStorageService();
   Timer? _debounce;
+  String? _editingRecipeId;
   String? _uploadedOriginalFileName;
   String? _selectedNameRecipe;
   String? _selectedDescriptionRecipe;
@@ -38,6 +40,28 @@ class ViewRecipesProvider extends ChangeNotifier {
   List<Ingredients> _ingredientsList = [];
   List<Utensils> _utensilsList = [];
 
+  // Tags de ingredientes activos en el Home y caché para búsqueda híbrida confiable
+  final List<String> _ingredientTags = [];
+  bool _isSearchingIngredients = false;
+  List<RecipesModel> _catalogCache = [];
+  final Map<String, List<Ingredients>> _recipeIngredientsCache = {};
+
+  static const List<String> quickIngredientSuggestions = [
+    'Huevo',
+    'Tomate',
+    'Cebolla',
+    'Pollo',
+    'Arroz',
+    'Queso',
+    'Papa',
+    'Pasta',
+    'Ajo',
+    'Leche',
+  ];
+
+  List<String> get ingredientTags => List.unmodifiable(_ingredientTags);
+  bool get isSearchingIngredients => _isSearchingIngredients;
+
   List<Map<String, dynamic>> get steps => _steps;
   List<Map<String, dynamic>> get selectedIngredient => _selectedIngredient;
   List<Map<String, dynamic>> get selectedUtensil => _selectedUtensil;
@@ -46,6 +70,9 @@ class ViewRecipesProvider extends ChangeNotifier {
   List<Utensils> get utensilsList => _utensilsList;
   bool get isLoadingIngredients => _isLoadingIngredients;
   RecipesModel? get getRecetas => recetas;
+  String? get editingRecipeId => _editingRecipeId;
+  bool get isEditingRecipe =>
+      _editingRecipeId != null && _editingRecipeId!.isNotEmpty;
   String? get selectedNameRecipe => _selectedNameRecipe;
   String? get selectedDescriptionRecipe => _selectedDescriptionRecipe;
   num? get selectedPrice => _selectedPrice;
@@ -64,11 +91,166 @@ class ViewRecipesProvider extends ChangeNotifier {
 
   // Setters para actualizar los valores y notificar cambios
   void setNewRecipe(nameRecipe, descriptionRecipe, price) {
-      _selectedNameRecipe = nameRecipe;
-      _selectedDescriptionRecipe = descriptionRecipe;
-      _selectedPrice = price;
+    _selectedNameRecipe = nameRecipe;
+    _selectedDescriptionRecipe = descriptionRecipe;
+    _selectedPrice = price;
     notifyListeners(); // Notificar a los widgets que dependen de este valor
   }
+
+  /// Actualiza en memoria los datos básicos mientras el usuario escribe,
+  /// conservando el estado temporal al navegar entre vistas.
+  void updateDraftBasicInfo({
+    String? nameRecipe,
+    String? descriptionRecipe,
+    num? price,
+  }) {
+    if (nameRecipe != null) _selectedNameRecipe = nameRecipe;
+    if (descriptionRecipe != null) {
+      _selectedDescriptionRecipe = descriptionRecipe;
+    }
+    if (price != null) _selectedPrice = price;
+  }
+
+  /// Sincroniza automáticamente la lista temporal de ingredientes en memoria.
+  void syncIngredients(List<Map<String, dynamic>> items) {
+    _selectedIngredient
+      ..clear()
+      ..addAll(items);
+  }
+
+  /// Sincroniza automáticamente la lista temporal de utensilios en memoria.
+  void syncUtensils(List<Map<String, dynamic>> items) {
+    _selectedUtensil
+      ..clear()
+      ..addAll(items);
+  }
+
+  /// Sincroniza automáticamente la lista temporal de pasos en memoria.
+  void syncSteps(List<Map<String, dynamic>> items) {
+    _steps.clear();
+    for (final item in items) {
+      final desc = (item['description'] ?? '').toString();
+      final timeStr = (item['time'] ?? '').toString();
+      final timeScreenMs =
+          _parseTimeToMilliseconds(timeStr, item['timeScreen']);
+      _steps.add({
+        'description': desc,
+        'time': timeStr,
+        'timeScreen': timeScreenMs,
+      });
+    }
+  }
+
+  /// Carga una receta existente en el estado temporal para editarla desde
+  /// el flujo de creación/edición.
+  Future<void> loadRecipeForEdit(RecipesModel recipe) async {
+    resetForm();
+    final token = _localStorageService.token;
+    RecipesModel target = recipe;
+
+    if (recipe.id != null && recipe.id!.isNotEmpty) {
+      final fetched = await recetasAPI.getRecipeById(recipe.id!);
+      if (fetched != null) {
+        target = fetched;
+      }
+    }
+
+    _editingRecipeId = target.id ?? recipe.id;
+    _selectedNameRecipe = target.nameRecipe;
+    _selectedDescriptionRecipe = target.descriptionRecipe;
+    _selectedPrice = target.price;
+    _uploadedImageUrl = target.imageUrl;
+    _selectedImage = null;
+    _uploadedOriginalFileName = null;
+
+    final rawLevel = target.level
+        .trim()
+        .replaceAll('á', 'a')
+        .replaceAll('Á', 'A');
+    _selectedLevel = _validLevels.firstWhere(
+      (l) => l.toLowerCase() == rawLevel.toLowerCase(),
+      orElse: () => _validLevels.first,
+    );
+
+    final rawCategory = target.category
+        .trim()
+        .replaceAll('ó', 'o')
+        .replaceAll('Ó', 'O');
+    _selectedCategory = _validCategories.firstWhere(
+      (c) => c.toLowerCase() == rawCategory.toLowerCase(),
+      orElse: () => _validCategories.first,
+    );
+
+    // Cargar ingredientes y utensilios
+    List<Ingredients> ingList = target.ingredientsRecipe ?? [];
+    List<Utensils> utList = target.utensilRecipe ?? [];
+    if ((ingList.isEmpty && utList.isEmpty) &&
+        _editingRecipeId != null &&
+        token != null) {
+      try {
+        final data =
+            await recetasAPI.getIngredientsUtensils(_editingRecipeId!, token);
+        if (data['ingredientsRecipe'] is List) {
+          ingList = (data['ingredientsRecipe'] as List)
+              .map((item) => Ingredients.fromJson(item))
+              .toList();
+        }
+        if (data['utensilRecipe'] is List) {
+          utList = (data['utensilRecipe'] as List)
+              .map((item) => Utensils.fromJson(item))
+              .toList();
+        }
+      } catch (_) {}
+    }
+
+    _selectedIngredient.clear();
+    for (final ing in ingList) {
+      _selectedIngredient.add({
+        'description': ing.description,
+        'amount': ing.amount,
+      });
+    }
+
+    _selectedUtensil.clear();
+    for (final ut in utList) {
+      _selectedUtensil.add({
+        'utensil': ut.utensil,
+      });
+    }
+
+    // Cargar pasos
+    _steps.clear();
+    if (target.steps != null && target.steps!.isNotEmpty) {
+      for (final s in target.steps!) {
+        _steps.add({
+          'description': s.description,
+          'time': s.time,
+          'timeScreen': s.timeScreen,
+        });
+      }
+    } else if (_editingRecipeId != null && token != null) {
+      try {
+        final rawSteps =
+            await recetasAPI.getRecipeSteps(_editingRecipeId!, token);
+        for (final item in rawSteps) {
+          if (item is Map) {
+            final desc = (item['description'] ?? '').toString();
+            final timeStr = (item['time'] ?? '').toString();
+            final timeScreenMs =
+                _parseTimeToMilliseconds(timeStr, item['timeScreen']);
+            _steps.add({
+              'description': desc,
+              'time': timeStr,
+              'timeScreen': timeScreenMs,
+            });
+          }
+        }
+      } catch (_) {}
+    }
+
+    notifyListeners();
+  }
+
   // Setters para actualizar los valores y notificar cambios
   void setSelectedCategory(String? value) {
     _selectedCategory = value;
@@ -82,6 +264,7 @@ class ViewRecipesProvider extends ChangeNotifier {
 
   // Para limpiar los valores seleccionados si es necesario
   void resetForm() {
+    _editingRecipeId = null;
     _selectedCategory = null;
     _selectedLevel = null;
     _selectedNameRecipe = null;
@@ -115,27 +298,352 @@ class ViewRecipesProvider extends ChangeNotifier {
   notifyListeners();
 }
 
-Future<void> getRecipeFilter(String? name, String? category, String? level, String? createdBy) async{
+  Future<void> getRecipeFilter(
+      String? name, String? category, String? level, String? createdBy) async {
+    if (createdBy != null) {
+      final effectiveToken = _localStorageService.token;
+      if (effectiveToken == null) return;
+      final List<RecipesModel> recetas = await recetasAPI.getRecipesFilter(
+          name, category, level, createdBy, effectiveToken);
+      recipeListFilter = recetas;
+      notifyListeners();
+      return;
+    }
 
-  final effectiveToken = _localStorageService.token;
-  if (effectiveToken == null) return;
-  
-  final List<RecipesModel> recetas = await recetasAPI.getRecipesFilter(name, category, level, createdBy, _localStorageService.token); 
-  recipeListFilter = recetas; // Reemplazar en lugar de agregar para filtros limpios
-  notifyListeners();
+    await searchHomeRecipes(
+      query: name,
+      category: category,
+      level: level,
+    );
+  }
 
-}
-
-void progressiveSearch(String query, String? category, String? level) {
+  void progressiveSearch(String query, String? category, String? level) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      getRecipeFilter(query, category, level, null);
+    _debounce = Timer(const Duration(milliseconds: 450), () {
+      searchHomeRecipes(
+        query: query,
+        category: category,
+        level: level,
+      );
     });
-}
+  }
+
+  /// Agrega uno o varios ingredientes (separados por coma) como tags activos en el Home.
+  Future<void> addIngredientTag(
+    String rawTag, {
+    String? currentTextQuery,
+    String? category,
+    String? level,
+  }) async {
+    final parts = rawTag
+        .split(',')
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return;
+
+    bool addedAny = false;
+    for (final part in parts) {
+      final normalizedNew = IngredientMatcher.normalizeCulinaryText(part);
+      final exists = _ingredientTags.any(
+        (existing) =>
+            IngredientMatcher.normalizeCulinaryText(existing) == normalizedNew,
+      );
+      if (!exists) {
+        _ingredientTags.add(part);
+        addedAny = true;
+      }
+    }
+
+    if (addedAny) {
+      notifyListeners();
+      await searchHomeRecipes(
+        query: currentTextQuery,
+        category: category,
+        level: level,
+      );
+    }
+  }
+
+  /// Elimina un tag de ingrediente y actualiza el catálogo del Home.
+  Future<void> removeIngredientTag(
+    String tag, {
+    String? currentTextQuery,
+    String? category,
+    String? level,
+  }) async {
+    final normalizedTarget = IngredientMatcher.normalizeCulinaryText(tag);
+    _ingredientTags.removeWhere(
+      (t) => IngredientMatcher.normalizeCulinaryText(t) == normalizedTarget,
+    );
+    notifyListeners();
+    await searchHomeRecipes(
+      query: currentTextQuery,
+      category: category,
+      level: level,
+    );
+  }
+
+  /// Limpia todos los tags de ingredientes del Home.
+  Future<void> clearIngredientTags({
+    String? currentTextQuery,
+    String? category,
+    String? level,
+    bool triggerSearch = true,
+  }) async {
+    if (_ingredientTags.isEmpty && !triggerSearch) return;
+    _ingredientTags.clear();
+    notifyListeners();
+    if (triggerSearch) {
+      await searchHomeRecipes(
+        query: currentTextQuery,
+        category: category,
+        level: level,
+      );
+    }
+  }
+
+  /// Hidrata el catálogo completo con los ingredientes reales de cada receta
+  /// usando caché en memoria/Hive + `GET /Recipes/ingredients-utensils/:id`.
+  Future<List<RecipesModel>> _hydrateCatalogWithIngredients(
+    String token, {
+    bool forceRefresh = false,
+  }) async {
+    if (_catalogCache.isEmpty || forceRefresh) {
+      try {
+        _catalogCache = await recetasAPI.getRecipe(token: token);
+      } catch (_) {
+        _catalogCache = await recetasAPI.getRecipesFilter(
+            null, null, null, null, token);
+      }
+    }
+
+    // Recetas que aún no tienen ingredientes en caché en memoria
+    final missingRecipes = <RecipesModel>[];
+    for (final r in _catalogCache) {
+      final id = r.id;
+      if (id == null || id.isEmpty) continue;
+      if (_recipeIngredientsCache.containsKey(id)) continue;
+
+      if (r.ingredientsRecipe != null && r.ingredientsRecipe!.isNotEmpty) {
+        _recipeIngredientsCache[id] = r.ingredientsRecipe!;
+        continue;
+      }
+
+      // Revisar caché persistente Hive
+      try {
+        final cached = _localStorageService.get('cacheBox', 'ing_$id');
+        if (cached is List) {
+          final parsed = cached
+              .whereType<Map>()
+              .map((m) => Ingredients.fromJson(Map<String, dynamic>.from(m)))
+              .toList();
+          if (parsed.isNotEmpty) {
+            _recipeIngredientsCache[id] = parsed;
+            continue;
+          }
+        }
+      } catch (_) {}
+
+      missingRecipes.add(r);
+    }
+
+    // Descargar ingredientes faltantes en lotes paralelos de 6
+    const int batchSize = 6;
+    for (int i = 0; i < missingRecipes.length; i += batchSize) {
+      final end = (i + batchSize < missingRecipes.length)
+          ? i + batchSize
+          : missingRecipes.length;
+      final chunk = missingRecipes.sublist(i, end);
+
+      await Future.wait(
+        chunk.map((recipe) async {
+          final id = recipe.id!;
+          try {
+            final data = await recetasAPI.getIngredientsUtensils(id, token);
+            if (data['ingredientsRecipe'] is List) {
+              final ings = (data['ingredientsRecipe'] as List)
+                  .whereType<Map>()
+                  .map((item) =>
+                      Ingredients.fromJson(Map<String, dynamic>.from(item)))
+                  .toList();
+              _recipeIngredientsCache[id] = ings;
+              try {
+                await _localStorageService.put(
+                  'cacheBox',
+                  'ing_$id',
+                  ings.map((e) => e.toJson()).toList(),
+                );
+              } catch (_) {}
+            } else {
+              _recipeIngredientsCache[id] = [];
+            }
+          } catch (_) {
+            _recipeIngredientsCache[id] = [];
+          }
+        }),
+      );
+    }
+
+    return _catalogCache.map((r) {
+      final cachedIngs =
+          r.id != null ? (_recipeIngredientsCache[r.id!] ?? r.ingredientsRecipe) : r.ingredientsRecipe;
+      return RecipesModel(
+        id: r.id,
+        nameRecipe: r.nameRecipe,
+        descriptionRecipe: r.descriptionRecipe,
+        ingredientsRecipe: cachedIngs,
+        imageUrl: r.imageUrl,
+        price: r.price,
+        level: r.level,
+        category: r.category,
+        createdBy: r.createdBy,
+        utensilRecipe: r.utensilRecipe,
+        steps: r.steps,
+      );
+    }).toList();
+  }
+
+  /// Búsqueda principal del Home: soporta lista de tags de ingredientes,
+  /// búsqueda simple por nombre/ingrediente y fallback automático si Koyeb aún no
+  /// tiene el endpoint nuevo.
+  Future<void> searchHomeRecipes({
+    String? query,
+    String? category,
+    String? level,
+  }) async {
+    final effectiveToken = _localStorageService.token;
+    if (effectiveToken == null) return;
+
+    final trimmedQuery = query?.trim() ?? '';
+
+    // ─── CASO 1: Hay tags de ingredientes activos en el slider ───
+    if (_ingredientTags.isNotEmpty) {
+      _isSearchingIngredients = true;
+      notifyListeners();
+
+      try {
+        final searchTerms = <String>[
+          ..._ingredientTags,
+          if (trimmedQuery.isNotEmpty) trimmedQuery,
+        ];
+
+        try {
+          final res = await recetasAPI.searchRecipesByIngredients(
+            ingredients: searchTerms,
+            category: category,
+            level: level,
+            excludeStaplesFromMissing: true,
+            limit: 60,
+            token: effectiveToken,
+          );
+          final backendRecipes = (res['recipes'] as List<RecipesModel>?) ?? [];
+          // Cachear ingredientes si vinieron en la respuesta
+          for (final r in backendRecipes) {
+            if (r.id != null &&
+                r.ingredientsRecipe != null &&
+                r.ingredientsRecipe!.isNotEmpty) {
+              _recipeIngredientsCache[r.id!] = r.ingredientsRecipe!;
+            }
+          }
+          recipeListFilter = backendRecipes;
+          return;
+        } catch (e) {
+          // Fallback automático si Koyeb aún retorna 404/no tiene el endpoint
+          debugPrint('Usando búsqueda híbrida de ingredientes en cliente: $e');
+          final hydrated = await _hydrateCatalogWithIngredients(effectiveToken);
+          recipeListFilter = IngredientMatcher.scoreAndRankByTags(
+            recipes: hydrated,
+            tags: _ingredientTags,
+            extraTextQuery: trimmedQuery.isNotEmpty ? trimmedQuery : null,
+            category: category,
+            level: level,
+          );
+        }
+      } finally {
+        _isSearchingIngredients = false;
+        notifyListeners();
+      }
+      return;
+    }
+
+    // ─── CASO 2: Sin tags, pero el usuario escribió texto en el buscador ───
+    if (trimmedQuery.isNotEmpty) {
+      _isSearchingIngredients = true;
+      notifyListeners();
+
+      try {
+        List<RecipesModel> backendMatches = [];
+        try {
+          backendMatches = await recetasAPI.getRecipesFilter(
+            trimmedQuery,
+            category,
+            level,
+            null,
+            effectiveToken,
+          );
+        } catch (_) {}
+
+        try {
+          final hydrated = await _hydrateCatalogWithIngredients(effectiveToken);
+          final localMatches = hydrated.where((r) {
+            if (category != null &&
+                category.isNotEmpty &&
+                r.category.toLowerCase() != category.toLowerCase()) {
+              return false;
+            }
+            if (level != null &&
+                level.isNotEmpty &&
+                r.level.toLowerCase() != level.toLowerCase()) {
+              return false;
+            }
+            return IngredientMatcher.matchesSingleTextQuery(r, trimmedQuery);
+          }).toList();
+
+          final seen = <String>{};
+          final merged = <RecipesModel>[];
+          for (final r in [...backendMatches, ...localMatches]) {
+            final key = r.id ?? r.nameRecipe;
+            if (seen.add(key)) merged.add(r);
+          }
+          recipeListFilter = merged;
+        } catch (_) {
+          recipeListFilter = backendMatches;
+        }
+      } finally {
+        _isSearchingIngredients = false;
+        notifyListeners();
+      }
+      return;
+    }
+
+    // ─── CASO 3: Catálogo estándar (sin tags ni texto) ───
+    final List<RecipesModel> recetas = await recetasAPI.getRecipesFilter(
+      null,
+      category,
+      level,
+      null,
+      effectiveToken,
+    );
+    recipeListFilter = recetas;
+    notifyListeners();
+  }
 
 void clearListRecipe() {
     recipeListFilter.clear();
     notifyListeners();
+  }
+
+  void _invalidateRecipeCache([String? recipeId]) {
+    _catalogCache.clear();
+    if (recipeId != null) {
+      _recipeIngredientsCache.remove(recipeId);
+      try {
+        _localStorageService.delete('cacheBox', 'ing_$recipeId');
+      } catch (_) {}
+    } else {
+      _recipeIngredientsCache.clear();
+    }
   }
 
   Future<bool> createRecipes(RecipesModel recipe) async {
@@ -149,7 +657,7 @@ void clearListRecipe() {
       }
 
       final recipeToSave = RecipesModel(
-        id: recipe.id,
+        id: _editingRecipeId ?? recipe.id,
         nameRecipe: recipe.nameRecipe,
         descriptionRecipe: recipe.descriptionRecipe,
         ingredientsRecipe: recipe.ingredientsRecipe,
@@ -162,11 +670,28 @@ void clearListRecipe() {
         steps: recipe.steps,
       );
 
+      if (isEditingRecipe) {
+        final updated = await recetasAPI.updateRecipe(
+          _editingRecipeId!,
+          recipeToSave.toJson(),
+        );
+        if (updated != null) {
+          recipeCreatedRes = updated;
+          _invalidateRecipeCache(_editingRecipeId);
+          await getRecipeFilter(null, null, null, null);
+          notifyListeners();
+          return true;
+        }
+        return false;
+      }
+
       final recipeCreatedResponse =
           await recetasAPI.createRecipe(recipeToSave, effectiveToken);
 
       recipeCreatedRes = recipeCreatedResponse;
       if (recipeCreatedRes != null) {
+        _invalidateRecipeCache();
+        await getRecipeFilter(null, null, null, null);
         notifyListeners();
         return true;
       }

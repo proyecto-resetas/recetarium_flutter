@@ -1,14 +1,15 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:resetas/src/features/recipes/models/book_recipe_model.dart';
-import 'package:resetas/src/features/auth/models/auth_response.dart';
-import 'package:resetas/src/features/user_profile/models/user.dart';
-import 'package:resetas/src/features/recipes/models/image_s3_model.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/auth/models/token_model.dart';
-import 'package:resetas/src/features/user_profile/models/user_model.dart';
-import 'package:resetas/src/core/config/config.dart';
-import 'package:resetas/src/core/config/env.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart' show XFile;
+import 'package:recetarium/src/features/recipes/models/book_recipe_model.dart';
+import 'package:recetarium/src/features/auth/models/auth_response.dart';
+import 'package:recetarium/src/features/user_profile/models/user.dart';
+import 'package:recetarium/src/features/recipes/models/image_s3_model.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/auth/models/token_model.dart';
+import 'package:recetarium/src/features/user_profile/models/user_model.dart';
+import 'package:recetarium/src/core/config/config.dart';
+import 'package:recetarium/src/core/config/env.dart';
 
 class RecetasAPI {
   late Dio _dio;
@@ -25,11 +26,18 @@ class RecetasAPI {
   }
 
   // Método para subir la imagen al servidor S3
-  Future<UploadImageResponse?> uploadImage(File imageFile) async {
+  Future<UploadImageResponse?> uploadImage(XFile imageFile) async {
     try {
       String uploadUrl = '/s3/upload';
+      // Usar bytes en web (no hay sistema de archivos) y ruta en móvil/escritorio
+      final MultipartFile multipartFile = kIsWeb
+          ? MultipartFile.fromBytes(
+              await imageFile.readAsBytes(),
+              filename: imageFile.name,
+            )
+          : await MultipartFile.fromFile(imageFile.path);
       FormData formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(imageFile.path),
+        'file': multipartFile,
       });
 
       Response response = await _dio.post(

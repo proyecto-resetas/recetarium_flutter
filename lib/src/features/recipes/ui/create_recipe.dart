@@ -2,15 +2,19 @@ import 'package:flutter/foundation.dart'; // Añadido para kIsWeb
 import 'package:flutter/material.dart';
 import 'dart:io' show File; // Importado para Image.file en móvil
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/custom_select_field.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
-import 'package:resetas/src/features/recipes/ui/add_ingredients_utensils.dart';
+import 'package:recetarium/src/core/utils/input_sanitizers.dart';
+import 'package:recetarium/src/core/widgets/custom_back_app_bar.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/custom_select_field.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/recipes/ui/add_ingredients_utensils.dart';
 
 
 class CreateRecipe extends StatefulWidget {
-  CreateRecipe({super.key});
+  final bool isStandaloneEdit;
+
+  const CreateRecipe({super.key, this.isStandaloneEdit = false});
 
   @override
   State<CreateRecipe> createState() => _CreateRecipeState();
@@ -25,11 +29,39 @@ class _CreateRecipeState extends State<CreateRecipe> {
 
   bool _isAnalyzing = false;
   bool _isAnalyzingText = false;
+  bool _isFreeRecipe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<ViewRecipesProvider>();
+      _syncControllersFromProvider(provider);
+      setState(() {});
+    });
+  }
 
   void _syncControllersFromProvider(ViewRecipesProvider provider) {
     nameRecipeController.text = provider.selectedNameRecipe ?? '';
     descriptionRecipeController.text = provider.selectedDescriptionRecipe ?? '';
-    _intController.text = provider.selectedPrice?.toString() ?? '0';
+    final price = provider.selectedPrice ?? 0;
+    _isFreeRecipe = price <= 0 && provider.selectedPrice != null;
+    _intController.text =
+        provider.selectedPrice != null ? price.toString() : '';
+  }
+
+  void _pushBasicDraftToProvider(ViewRecipesProvider provider) {
+    final parsedPrice = _isFreeRecipe
+        ? 0
+        : (num.tryParse(_intController.text.trim()) ??
+            provider.selectedPrice ??
+            0);
+    provider.updateDraftBasicInfo(
+      nameRecipe: nameRecipeController.text,
+      descriptionRecipe: descriptionRecipeController.text,
+      price: parsedPrice,
+    );
   }
 
   Future<void> _handleImageAnalysis(ViewRecipesProvider provider) async {
@@ -139,6 +171,8 @@ class _CreateRecipeState extends State<CreateRecipe> {
                           controller: aiTextPromptController,
                           maxLines: 7,
                           minLines: 4,
+                          maxLength: 4000,
+                          inputFormatters: InputSanitizers.safeText,
                           style: const TextStyle(fontSize: 14, height: 1.4),
                           decoration: InputDecoration(
                             border: InputBorder.none,
@@ -189,7 +223,7 @@ class _CreateRecipeState extends State<CreateRecipe> {
                               backgroundColor: Colors.deepPurple,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
+                                horizontal: 14,
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
@@ -254,9 +288,12 @@ class _CreateRecipeState extends State<CreateRecipe> {
                                     ),
                                   )
                                 : const Icon(Icons.auto_awesome_rounded, size: 18),
-                            label: Text(
-                              _isAnalyzingText ? 'Organizando...' : 'Organizar con IA',
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                _isAnalyzingText ? 'Organizando...' : 'Organizar con IA',
+                                style: const TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ),
                         ],
@@ -284,13 +321,43 @@ class _CreateRecipeState extends State<CreateRecipe> {
   @override
   Widget build(BuildContext context) {
     final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context);
+    final isEditing = viewRecipesProvider.isEditingRecipe;
 
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.only(top: 20.0, bottom: 120.0),
+      appBar: widget.isStandaloneEdit
+          ? CustomBackAppBar(
+              title: isEditing ? 'Editar Receta' : 'Crear Receta',
+              onBack: () {
+                viewRecipesProvider.resetForm();
+                Navigator.of(context).pop();
+              },
+            )
+          : isEditing
+              ? AppBar(
+                  title: const Text('Editar Receta'),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    TextButton.icon(
+                      onPressed: () {
+                        viewRecipesProvider.resetForm();
+                        _syncControllersFromProvider(viewRecipesProvider);
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      label: const Text('Cancelar edición'),
+                    ),
+                  ],
+                )
+              : null,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.only(
+                top: 20.0,
+                bottom: widget.isStandaloneEdit ? 40.0 : 120.0,
+              ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -387,18 +454,8 @@ class _CreateRecipeState extends State<CreateRecipe> {
                   ),
                   const SizedBox(height: 10),
                   Center(
-                    child: viewRecipesProvider.selectedImage == null
-                        ? Container(
-                            height: 120,
-                            width: 120,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Icon(Icons.image_search_rounded,
-                                size: 50, color: Colors.grey),
-                          )
-                        : ClipRRect(
+                    child: viewRecipesProvider.selectedImage != null
+                        ? ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: kIsWeb
                                 ? Image.network(
@@ -413,11 +470,48 @@ class _CreateRecipeState extends State<CreateRecipe> {
                                     width: 120,
                                     fit: BoxFit.cover,
                                   ),
-                          ),
+                          )
+                        : (viewRecipesProvider.uploadedImageUrl != null &&
+                                viewRecipesProvider
+                                    .uploadedImageUrl!.isNotEmpty)
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Image.network(
+                                  viewRecipesProvider.uploadedImageUrl!,
+                                  height: 120,
+                                  width: 120,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    height: 120,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Icon(
+                                      Icons.image_search_rounded,
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                height: 120,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Icon(Icons.image_search_rounded,
+                                    size: 50, color: Colors.grey),
+                              ),
                   ),
                   const SizedBox(height: 20),
                   CustomMainButton(
-                    text: viewRecipesProvider.selectedImage == null
+                    text: (viewRecipesProvider.selectedImage == null &&
+                            (viewRecipesProvider.uploadedImageUrl == null ||
+                                viewRecipesProvider.uploadedImageUrl!.isEmpty))
                         ? "Select Image"
                         : "Change Image",
                     icon: Icons.image_rounded,
@@ -441,11 +535,20 @@ class _CreateRecipeState extends State<CreateRecipe> {
                   CustomIconInput(
                     controller: nameRecipeController,
                     label: 'Name Recipe',
-                    hintText: 'Enter recipe name',
+                    hintText: 'Ej: Lomo al trapo',
+                    helperText: 'Entre 3 y 80 caracteres.',
                     prefixIcon: Icons.restaurant_menu_rounded,
+                    maxLength: 80,
+                    inputFormatters: InputSanitizers.safeText,
+                    onChanged: (_) =>
+                        _pushBasicDraftToProvider(viewRecipesProvider),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.isEmpty) {
                         return 'Por favor, ingresa el nombre de la receta';
+                      }
+                      if (trimmed.length < 3) {
+                        return 'El nombre debe tener al menos 3 caracteres';
                       }
                       return null;
                     },
@@ -454,13 +557,21 @@ class _CreateRecipeState extends State<CreateRecipe> {
                   CustomIconInput(
                     controller: descriptionRecipeController,
                     label: 'Description',
-                    hintText: 'Enter recipe description',
+                    hintText: 'Ej: Plato tradicional colombiano...',
+                    helperText: 'Entre 5 y 200 caracteres.',
                     prefixIcon: Icons.description_rounded,
                     maxLines: 3,
                     maxLength: 200,
+                    inputFormatters: InputSanitizers.safeText,
+                    onChanged: (_) =>
+                        _pushBasicDraftToProvider(viewRecipesProvider),
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      final trimmed = value?.trim() ?? '';
+                      if (trimmed.isEmpty) {
                         return 'Por favor, ingresa la descripción';
+                      }
+                      if (trimmed.length < 5) {
+                        return 'La descripción debe tener al menos 5 caracteres';
                       }
                       return null;
                     },
@@ -522,34 +633,89 @@ class _CreateRecipeState extends State<CreateRecipe> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  CustomIconInput(
-                    controller: _intController,
-                    label: 'Recipe Value',
-                    hintText: 'Enter the value of your recipe',
-                    prefixIcon: Icons.attach_money_rounded,
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa el valor de tu Receta';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Por favor ingresa un número válido';
-                      }
-                      return null;
-                    },
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _isFreeRecipe
+                          ? const Color(0xFFDCFCE7)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _isFreeRecipe
+                            ? const Color(0xFF16A34A).withValues(alpha: 0.4)
+                            : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      value: _isFreeRecipe,
+                      activeColor: const Color(0xFF16A34A),
+                      title: const Text(
+                        'Receta gratuita',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          _isFreeRecipe = val;
+                          if (val) {
+                            _intController.text = '0';
+                          } else if (_intController.text == '0') {
+                            _intController.text = '';
+                          }
+                        });
+                        _pushBasicDraftToProvider(viewRecipesProvider);
+                      },
+                    ),
                   ),
+                  if (!_isFreeRecipe) ...[
+                    const SizedBox(height: 16),
+                    CustomIconInput(
+                      controller: _intController,
+                      label: 'Recipe Value',
+                      hintText: 'Ej: 15000',
+                      helperText: 'Solo números enteros en COP, sin puntos ni signos.',
+                      prefixIcon: Icons.attach_money_rounded,
+                      keyboardType: TextInputType.number,
+                      maxLength: 9,
+                      inputFormatters: InputSanitizers.digitsOnly,
+                      onChanged: (_) =>
+                          _pushBasicDraftToProvider(viewRecipesProvider),
+                      validator: (value) {
+                        if (_isFreeRecipe) return null;
+                        final trimmed = value?.trim() ?? '';
+                        if (trimmed.isEmpty) {
+                          return 'Por favor ingresa el valor de tu Receta';
+                        }
+                        final parsed = int.tryParse(trimmed);
+                        if (parsed == null || parsed <= 0) {
+                          return 'Ingresa un monto numérico válido mayor a 0';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 30),
                   CustomMainButton(
                     text: 'Next',
                     icon: Icons.arrow_forward_rounded,
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        int priceValue = int.parse(_intController.text);
+                        int priceValue = _isFreeRecipe
+                            ? 0
+                            : (int.tryParse(_intController.text.trim()) ?? 0);
 
                         // La imagen ahora es opcional
                         viewRecipesProvider.setNewRecipe(
-                          nameRecipeController.text,
-                          descriptionRecipeController.text,
+                          InputSanitizers.sanitize(nameRecipeController.text),
+                          InputSanitizers.sanitize(
+                            descriptionRecipeController.text,
+                          ),
                           priceValue,
                         );
 
@@ -565,6 +731,7 @@ class _CreateRecipeState extends State<CreateRecipe> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );

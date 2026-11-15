@@ -1,0 +1,4 @@
+# Solo se necesita build/web dentro del contexto de Docker
+*
+!build/web/**
+!nginx.conf

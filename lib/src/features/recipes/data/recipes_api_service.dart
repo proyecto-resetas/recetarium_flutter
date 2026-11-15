@@ -1,12 +1,13 @@
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:resetas/src/core/config/config.dart';
-import 'package:resetas/src/core/services/local_storage_service.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/models/image_s3_model.dart';
-import 'package:resetas/src/features/recipes/models/book_recipe_model.dart';
-import 'package:resetas/src/features/user_profile/models/user_model.dart';
+import 'package:recetarium/src/core/api/auth_interceptor.dart';
+import 'package:recetarium/src/core/config/config.dart';
+import 'package:recetarium/src/core/services/local_storage_service.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/models/image_s3_model.dart';
+import 'package:recetarium/src/features/recipes/models/book_recipe_model.dart';
+import 'package:recetarium/src/features/user_profile/models/user_model.dart';
 
 
 class RecipesApiService {
@@ -23,30 +24,32 @@ class RecipesApiService {
     );
 
     _dio.options.headers['x-api-key'] = Config.xapikey;
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          options.headers['x-api-key'] ??= Config.xapikey;
-          final currentAuth = options.headers['Authorization']?.toString() ?? '';
-          if (currentAuth.isEmpty || currentAuth == 'Bearer null') {
-            final token = _localStorageService.token;
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
-            }
-          }
-          return handler.next(options);
-        },
-      ),
-    );
+    _dio.interceptors.add(AuthInterceptor(_dio));
   }
 
   // Obtener todas las recetas
-  Future<List<RecipesModel>> getRecipe() async {
-    final response = await _dio.get('/Recipes/all');
+  Future<List<RecipesModel>> getRecipe({String? token}) async {
+    final effectiveToken = token ?? _localStorageService.token;
+    final response = await _dio.get(
+      '/Recipes/all',
+      options: Options(
+        headers: {
+          if (effectiveToken != null && effectiveToken.isNotEmpty)
+            'Authorization': 'Bearer $effectiveToken',
+          'x-api-key': Config.xapikey,
+        },
+      ),
+    );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = response.data['recipes'];
+      final raw = response.data;
+      final List<dynamic> data = raw is List
+          ? raw
+          : (raw is Map && raw['recipes'] is List)
+              ? raw['recipes'] as List<dynamic>
+              : [];
       return data
+          .whereType<Map<String, dynamic>>()
           .map((recipeJson) => RecipesModel.fromJsonModel(recipeJson))
           .toList();
     } else {
@@ -86,6 +89,54 @@ class RecipesApiService {
           .toList();
     } else {
       throw Exception('Error al obtener recetas filtradas');
+    }
+  }
+
+  // Buscar recetas por lista de ingredientes de la despensa
+  Future<Map<String, dynamic>> searchRecipesByIngredients({
+    required List<String> ingredients,
+    int? minMatchPercentage,
+    int? maxMissingIngredients,
+    String? category,
+    String? level,
+    bool excludeStaplesFromMissing = true,
+    int page = 1,
+    int limit = 10,
+    String? token,
+  }) async {
+    final response = await _dio.post(
+      '/Recipes/search-by-ingredients',
+      data: {
+        'ingredients': ingredients,
+        if (minMatchPercentage != null) 'minMatchPercentage': minMatchPercentage,
+        if (maxMissingIngredients != null)
+          'maxMissingIngredients': maxMissingIngredients,
+        if (category != null && category.isNotEmpty) 'category': category,
+        if (level != null && level.isNotEmpty) 'level': level,
+        'excludeStaplesFromMissing': excludeStaplesFromMissing,
+        'page': page,
+        'limit': limit,
+      },
+      options: Options(
+        headers: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+          'x-api-key': Config.xapikey,
+        },
+      ),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = response.data;
+      final List<dynamic> list = data['recipes'] ?? [];
+      final recipes = list.map((r) => RecipesModel.fromJsonModel(r)).toList();
+      return {
+        'recipes': recipes,
+        'total': data['total'] ?? recipes.length,
+        'page': data['page'] ?? page,
+        'totalPages': data['totalPages'] ?? 1,
+      };
+    } else {
+      throw Exception('Error al buscar recetas por ingredientes');
     }
   }
 
@@ -130,15 +181,43 @@ class RecipesApiService {
     }
   }
 
+  // Obtener una receta completa por su ID (incluye ingredientes, utensilios y pasos)
+  Future<RecipesModel?> getRecipeById(String recipeId) async {
+    try {
+      final response = await _dio.get(
+        '/Recipes/$recipeId',
+        options: Options(
+          headers: {
+            'x-api-key': Config.xapikey,
+          },
+        ),
+      );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        return RecipesModel.fromJsonModel(response.data);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Actualizar una receta existente
   Future<RecipesModel?> updateRecipe(
     String recipeId,
     Map<String, dynamic> updateData,
   ) async {
     try {
+      final payload = Map<String, dynamic>.from(updateData)
+        ..remove('_id')
+        ..remove('createdBy');
+      if (payload['imageUrl'] == null ||
+          (payload['imageUrl'] is String &&
+              (payload['imageUrl'] as String).trim().isEmpty)) {
+        payload.remove('imageUrl');
+      }
       final response = await _dio.patch(
         '/Recipes/update/$recipeId',
-        data: updateData,
+        data: payload,
         options: Options(
           headers: {
             'x-api-key': Config.xapikey,

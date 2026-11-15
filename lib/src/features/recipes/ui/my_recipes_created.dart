@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/image_card.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/data/my_recipes_created_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
+import 'package:recetarium/src/core/widgets/image_card.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/data/my_recipes_created_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/create_recipe.dart';
+import 'package:recetarium/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 
 class MyRecipesCreated extends StatefulWidget {
   final bool embedded;
@@ -143,7 +145,10 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                       const SizedBox(width: 12),
                       InkWell(
                         borderRadius: BorderRadius.circular(20),
-                        onTap: widget.onCreateRecipeTap,
+                        onTap: () {
+                          context.read<ViewRecipesProvider>().resetForm();
+                          widget.onCreateRecipeTap!();
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
@@ -218,7 +223,7 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: content,
+      body: SafeArea(child: content),
     );
   }
 
@@ -316,6 +321,20 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
         );
       }
     }
+  }
+
+  Future<void> _openEditRecipe(
+    BuildContext context,
+    RecipesModel recipe,
+  ) async {
+    final recipesProvider = context.read<ViewRecipesProvider>();
+    await recipesProvider.loadRecipeForEdit(recipe);
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const CreateRecipe(isStandaloneEdit: true),
+      ),
+    );
   }
 
   Widget _buildCreatedRecipeCard(
@@ -424,17 +443,25 @@ class _MyRecipesCreatedState extends State<MyRecipesCreated> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: colors.secondary.withValues(alpha: 0.06),
+                            Tooltip(
+                              message: 'Editar receta',
+                              child: InkWell(
                                 borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.edit_outlined,
-                                size: 16,
-                                color: colors.secondary,
+                                onTap: () => _openEditRecipe(context, recipe),
+                                child: Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        colors.secondary.withValues(alpha: 0.06),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.edit_outlined,
+                                    size: 16,
+                                    color: colors.secondary,
+                                  ),
+                                ),
                               ),
                             ),
                             if (isSuperAdmin) ...[

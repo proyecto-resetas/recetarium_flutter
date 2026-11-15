@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/image_card.dart';
-import 'package:resetas/src/features/notifications/data/notifications_provider.dart';
+import 'package:recetarium/src/core/widgets/image_card.dart';
+import 'package:recetarium/src/features/notifications/data/notifications_provider.dart';
 
 class LiveNotificationBanner extends StatelessWidget {
   const LiveNotificationBanner({super.key});

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final String initialEmail;

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/image_card.dart';
-import 'package:resetas/src/features/notifications/data/notifications_provider.dart';
-import 'package:resetas/src/features/notifications/models/notification_model.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/core/widgets/custom_back_app_bar.dart';
+import 'package:recetarium/src/core/widgets/image_card.dart';
+import 'package:recetarium/src/features/notifications/data/notifications_provider.dart';
+import 'package:recetarium/src/features/notifications/models/notification_model.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -108,18 +109,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Scaffold(
       backgroundColor: _bgWarm,
-      appBar: AppBar(
+      appBar: CustomBackAppBar(
         backgroundColor: _bgWarm,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: _textDark,
-            size: 20,
-          ),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
+        title: 'Notificaciones',
         actions: [
           // Botón para probar notificación WebSocket + Push en vivo
           IconButton(
@@ -155,10 +147,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
         ],
       ),
-      body: RefreshIndicator(
-        color: _brandOrange,
-        onRefresh: provider.fetchNotifications,
-        child: CustomScrollView(
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: _brandOrange,
+          onRefresh: provider.fetchNotifications,
+          child: CustomScrollView(
           slivers: [
             // ─── Cabecera: Logo + "Notificaciones" + Badge "X nuevas" ───────
             SliverToBoxAdapter(
@@ -368,6 +361,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ],
           ],
+        ),
         ),
       ),
     );

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/l10n/app_localizations.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/l10n/app_localizations.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -154,10 +154,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 40),
@@ -305,6 +306,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

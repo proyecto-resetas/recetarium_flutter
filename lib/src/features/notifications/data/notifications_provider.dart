@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:resetas/src/features/notifications/data/notifications_api_service.dart';
-import 'package:resetas/src/features/notifications/data/notifications_socket_service.dart';
-import 'package:resetas/src/features/notifications/data/push_notification_service.dart';
-import 'package:resetas/src/features/notifications/models/notification_model.dart';
+import 'package:recetarium/src/features/notifications/data/notifications_api_service.dart';
+import 'package:recetarium/src/features/notifications/data/notifications_socket_service.dart';
+import 'package:recetarium/src/features/notifications/data/push_notification_service.dart';
+import 'package:recetarium/src/features/notifications/models/notification_model.dart';
 
 class NotificationsProvider extends ChangeNotifier {
   final NotificationsApiService _apiService = NotificationsApiService();

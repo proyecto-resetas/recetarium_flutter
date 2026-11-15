@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/models/ingredients_model.dart';
-import 'package:resetas/src/features/recipes/models/utensil_model.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
-import 'package:resetas/src/features/recipes/data/steps_provider.dart';
-import 'package:resetas/src/features/recipes/models/steps_model.dart';
+import 'package:recetarium/src/core/services/admob_service.dart';
+import 'package:recetarium/src/core/widgets/ad_banner_widget.dart';
+import 'package:recetarium/src/core/widgets/custom_back_app_bar.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/models/ingredients_model.dart';
+import 'package:recetarium/src/features/recipes/models/utensil_model.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/recipes/data/steps_provider.dart';
+import 'package:recetarium/src/features/recipes/models/steps_model.dart';
 
 class StepsScreen extends StatefulWidget {
   final RecipesModel recipe;
@@ -21,6 +24,7 @@ class StepsScreen extends StatefulWidget {
 class _StepsScreenState extends State<StepsScreen> {
   int _currentStepIndex = 0;
   bool _isPaused = false;
+  final ScrollController _stepTextScrollController = ScrollController();
 
   @override
   void initState() {
@@ -35,6 +39,12 @@ class _StepsScreenState extends State<StepsScreen> {
       }
       _startStepTimer();
     });
+  }
+
+  void _resetStepScroll() {
+    if (_stepTextScrollController.hasClients) {
+      _stepTextScrollController.jumpTo(0);
+    }
   }
 
   void _startStepTimer() async {
@@ -73,8 +83,13 @@ class _StepsScreenState extends State<StepsScreen> {
         setState(() {
           _currentStepIndex++;
         });
+        _resetStepScroll();
       }
     } else {
+      final currentUser = context.read<AuthProvider>().user;
+      if (widget.recipe.shouldShowAdsForUser(currentUser)) {
+        AdMobService.instance.showInterstitialAdIfAvailable();
+      }
       _resetSteps(); // Si es el último paso, reiniciar
       _pauseTimer(); // Pausar automáticamente
     }
@@ -102,6 +117,7 @@ class _StepsScreenState extends State<StepsScreen> {
       setState(() {
         _currentStepIndex = 0; // Reinicia
       });
+      _resetStepScroll();
     }
   }
 
@@ -401,6 +417,7 @@ class _StepsScreenState extends State<StepsScreen> {
   @override
   void dispose() {
     _isPaused = true; // Asegúrate de que esté pausado
+    _stepTextScrollController.dispose();
     super.dispose();
   }
 
@@ -410,6 +427,8 @@ class _StepsScreenState extends State<StepsScreen> {
 
     final steps = _getSteps();
     final recipesProvider = context.watch<ViewRecipesProvider>();
+    final currentUser = context.watch<AuthProvider>().user;
+    final showAds = widget.recipe.shouldShowAdsForUser(currentUser);
     final ingredients = recipesProvider.ingredientsList.isNotEmpty
         ? recipesProvider.ingredientsList
         : (widget.recipe.ingredientsRecipe ?? <Ingredients>[]);
@@ -441,13 +460,17 @@ class _StepsScreenState extends State<StepsScreen> {
             ),
           ],
         ),
-        body: const Center(child: Text('No hay pasos disponibles para esta receta.')),
+        body: const SafeArea(
+          child: Center(
+            child: Text('No hay pasos disponibles para esta receta.'),
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.recipe.nameRecipe),
+      appBar: CustomBackAppBar(
+        title: widget.recipe.nameRecipe,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
@@ -468,9 +491,10 @@ class _StepsScreenState extends State<StepsScreen> {
           ),
         ],
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
           // Indicador de pasos con scroll horizontal
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -480,7 +504,10 @@ class _StepsScreenState extends State<StepsScreen> {
                 final step = entry.value;
 
                 return GestureDetector(
-                  onTap: () => setState(() => _currentStepIndex = stepIndex),
+                  onTap: () {
+                    setState(() => _currentStepIndex = stepIndex);
+                    _resetStepScroll();
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
@@ -525,21 +552,36 @@ class _StepsScreenState extends State<StepsScreen> {
           ),
 
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildHighlightedStepDescription(
-                    steps[_currentStepIndex].description,
-                    ingredients,
-                    utensils,
+                  Flexible(
+                    child: Scrollbar(
+                      controller: _stepTextScrollController,
+                      thumbVisibility: true,
+                      radius: const Radius.circular(8),
+                      child: SingleChildScrollView(
+                        controller: _stepTextScrollController,
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        child: _buildHighlightedStepDescription(
+                          steps[_currentStepIndex].description,
+                          ingredients,
+                          utensils,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -564,9 +606,18 @@ class _StepsScreenState extends State<StepsScreen> {
           ),
 
           Padding(
-            padding: const EdgeInsets.only(bottom: 40),
+            padding: const EdgeInsets.only(bottom: 24),
             child: Column(
               children: [
+                if (showAds)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: AdBannerWidget(
+                      placementLabel:
+                          'Paso a Paso Patrocinado • Google AdMob',
+                      margin: EdgeInsets.only(bottom: 8),
+                    ),
+                  ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -589,7 +640,10 @@ class _StepsScreenState extends State<StepsScreen> {
                   children: [
                     _ActionButton(
                       onPressed: _currentStepIndex > 0
-                          ? () => setState(() => _currentStepIndex--)
+                          ? () {
+                              setState(() => _currentStepIndex--);
+                              _resetStepScroll();
+                            }
                           : null,
                       icon: Icons.skip_previous_rounded,
                       label: 'Anterior',
@@ -608,6 +662,7 @@ class _StepsScreenState extends State<StepsScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -634,11 +689,17 @@ class _ActionButton extends StatelessWidget {
         backgroundColor: secondary ? Colors.grey[200] : const Color.fromRGBO(254, 166, 33, 1),
         foregroundColor: secondary ? Colors.black87 : Colors.white,
         elevation: secondary ? 0 : 4,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      icon: Icon(icon),
-      label: Text(label),
+      icon: Icon(icon, size: 20),
+      label: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+      ),
     );
   }
 }

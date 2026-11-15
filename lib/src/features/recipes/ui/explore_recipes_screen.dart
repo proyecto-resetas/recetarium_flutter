@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
-import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
+import 'package:recetarium/src/core/widgets/ad_banner_widget.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_favorite_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
+import 'package:recetarium/src/features/shopping_cart/data/car_shop_provider.dart';
 
 class ExploreRecipesScreen extends StatefulWidget {
   const ExploreRecipesScreen({super.key});
@@ -54,18 +55,65 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
     return count;
   }
 
-  bool get _hasActiveFilters =>
-      _activeAdvancedCount > 0 || _searchController.text.trim().isNotEmpty;
+  bool _hasActiveFilters(ViewRecipesProvider provider) =>
+      _activeAdvancedCount > 0 ||
+      _searchController.text.trim().isNotEmpty ||
+      provider.ingredientTags.isNotEmpty;
 
   void _applyFilters(ViewRecipesProvider provider) {
-    provider.getRecipeFilter(
-      _searchController.text.trim().isEmpty
+    provider.searchHomeRecipes(
+      query: _searchController.text.trim().isEmpty
           ? null
           : _searchController.text.trim(),
+      category: _selectedCategory,
+      level: _selectedLevel,
+    );
+  }
+
+  void _addCurrentTextAsTag(ViewRecipesProvider provider) {
+    final text = _searchController.text.trim();
+    if (text.isEmpty) return;
+    _searchController.clear();
+    provider.addIngredientTag(
+      text,
+      category: _selectedCategory,
+      level: _selectedLevel,
+    );
+    setState(() {});
+  }
+
+  void _handleSearchChanged(String value, ViewRecipesProvider provider) {
+    if (value.contains(',')) {
+      final parts = value.split(',');
+      final completed = parts
+          .sublist(0, parts.length - 1)
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .join(',');
+      final remainder = parts.last.trimLeft();
+
+      if (completed.isNotEmpty) {
+        _searchController.value = TextEditingValue(
+          text: remainder,
+          selection: TextSelection.collapsed(offset: remainder.length),
+        );
+        provider.addIngredientTag(
+          completed,
+          currentTextQuery: remainder,
+          category: _selectedCategory,
+          level: _selectedLevel,
+        );
+        setState(() {});
+        return;
+      }
+    }
+
+    provider.progressiveSearch(
+      value,
       _selectedCategory,
       _selectedLevel,
-      null,
     );
+    setState(() {});
   }
 
   void _clearAllFilters(ViewRecipesProvider provider) {
@@ -76,6 +124,7 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
       _sortOption = RecipeSortOption.none;
       _maxPrice = null;
     });
+    provider.clearIngredientTags(triggerSearch: false);
     _applyFilters(provider);
   }
 
@@ -190,15 +239,35 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
                       selectedLevel: _selectedLevel,
                       sortOption: _sortOption,
                       maxPrice: _maxPrice,
-                      onSearchChanged: (value) {
-                        provider.progressiveSearch(
-                          value,
-                          _selectedCategory,
-                          _selectedLevel,
-                        );
-                        setState(() {});
+                      showIngredientTagsSlider: true,
+                      ingredientTags: provider.ingredientTags,
+                      suggestedIngredients:
+                          ViewRecipesProvider.quickIngredientSuggestions,
+                      onAddCurrentTextAsTag: () =>
+                          _addCurrentTextAsTag(provider),
+                      onAddIngredientTag: (tag) => provider.addIngredientTag(
+                        tag,
+                        currentTextQuery: _searchController.text.trim(),
+                        category: _selectedCategory,
+                        level: _selectedLevel,
+                      ),
+                      onRemoveIngredientTag: (tag) =>
+                          provider.removeIngredientTag(
+                        tag,
+                        currentTextQuery: _searchController.text.trim(),
+                        category: _selectedCategory,
+                        level: _selectedLevel,
+                      ),
+                      onSearchChanged: (value) =>
+                          _handleSearchChanged(value, provider),
+                      onSearchSubmitted: (value) {
+                        if (provider.ingredientTags.isNotEmpty &&
+                            value.trim().isNotEmpty) {
+                          _addCurrentTextAsTag(provider);
+                        } else {
+                          _applyFilters(provider);
+                        }
                       },
-                      onSearchSubmitted: (_) => _applyFilters(provider),
                       onSearchCleared: () {
                         _searchController.clear();
                         _applyFilters(provider);
@@ -215,6 +284,24 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
                       onOpenFilterModal: () =>
                           _openFilterAndSortSheet(context, provider),
                     ),
+                    const AdBannerWidget(
+                      placementLabel:
+                          'Recetas Gratuitas Patrocinadas • Google AdMob',
+                      margin: EdgeInsets.only(top: 12, bottom: 2),
+                    ),
+                    if (provider.isSearchingIngredients)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            minHeight: 2.5,
+                            color: colors.primary,
+                            backgroundColor:
+                                colors.primary.withValues(alpha: 0.15),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -258,7 +345,7 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
                         ),
                       ],
                     ),
-                    if (_hasActiveFilters)
+                    if (_hasActiveFilters(provider))
                       TextButton.icon(
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
@@ -356,7 +443,7 @@ class _ExploreRecipesScreenState extends State<ExploreRecipesScreen> {
                 color: colors.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            if (_hasActiveFilters) ...[
+            if (_hasActiveFilters(provider)) ...[
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -568,16 +655,44 @@ class _RecipeGridCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '\$${recipe.price}',
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w800,
-                            color: colors.primary,
+                        if (recipe.isFree)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'GRATIS',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF15803D),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          )
+                        else
+                          Text(
+                            '\$${recipe.price}',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              color: colors.primary,
+                            ),
                           ),
-                        ),
                         GestureDetector(
                           onTap: () {
+                            if (recipe.isFree) {
+                              context.push(
+                                '/recipes_details',
+                                extra: recipe,
+                              );
+                              return;
+                            }
                             shopProvider.addToCart(recipe);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -591,13 +706,19 @@ class _RecipeGridCard extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: colors.primary.withValues(alpha: 0.12),
+                              color: recipe.isFree
+                                  ? const Color(0xFFDCFCE7)
+                                  : colors.primary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              Icons.add_shopping_cart_rounded,
+                              recipe.isFree
+                                  ? Icons.play_circle_fill_rounded
+                                  : Icons.add_shopping_cart_rounded,
                               size: 16,
-                              color: colors.primary,
+                              color: recipe.isFree
+                                  ? const Color(0xFF15803D)
+                                  : colors.primary,
                             ),
                           ),
                         ),

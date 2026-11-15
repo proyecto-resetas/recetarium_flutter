@@ -1,19 +1,19 @@
 import 'package:go_router/go_router.dart';
-import 'package:resetas/src/features/auth/ui/login_screen.dart';
-import 'package:resetas/src/features/auth/ui/register_screen.dart';
-import 'package:resetas/src/features/recipes/ui/home_screen.dart';
-import 'package:resetas/src/features/admin/ui/admin_home_screen.dart';
-import 'package:resetas/src/features/admin/ui/super_admin_panel_screen.dart';
-import 'package:resetas/src/features/user_profile/ui/my_profile_screen.dart';
-import 'package:resetas/src/features/shopping_cart/ui/car_shop.screen.dart';
-import 'package:resetas/src/core/widgets/MyScrollableWidget.dart';
-import 'package:resetas/src/features/auth/ui/otp_verification_screen.dart';
-import 'package:resetas/src/features/auth/ui/forgot_password_screen.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/recipes_details.screen.dart';
-import 'package:resetas/src/features/recipes/ui/ingredients_utensil.dart';
-import 'package:resetas/src/features/notifications/ui/notifications_screen.dart';
+import 'package:recetarium/src/features/auth/ui/login_screen.dart';
+import 'package:recetarium/src/features/auth/ui/register_screen.dart';
+import 'package:recetarium/src/features/recipes/ui/home_screen.dart';
+import 'package:recetarium/src/features/admin/ui/admin_home_screen.dart';
+import 'package:recetarium/src/features/admin/ui/super_admin_panel_screen.dart';
+import 'package:recetarium/src/features/user_profile/ui/my_profile_screen.dart';
+import 'package:recetarium/src/features/shopping_cart/ui/car_shop.screen.dart';
+import 'package:recetarium/src/core/widgets/MyScrollableWidget.dart';
+import 'package:recetarium/src/features/auth/ui/otp_verification_screen.dart';
+import 'package:recetarium/src/features/auth/ui/forgot_password_screen.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/recipes_details.screen.dart';
+import 'package:recetarium/src/features/recipes/ui/ingredients_utensil.dart';
+import 'package:recetarium/src/features/notifications/ui/notifications_screen.dart';
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
     return GoRouter(

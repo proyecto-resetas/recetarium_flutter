@@ -40,7 +40,9 @@ class CustomSelectField<T> extends StatelessWidget {
           const SizedBox(height: 8),
         ],
         DropdownButtonFormField<T>(
-          value: value,
+          key: ValueKey(value),
+          initialValue: value,
+          isExpanded: true,
           items: items,
           onChanged: onChanged,
           validator: validator,

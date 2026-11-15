@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/core/theme/bootstrap_icons.dart';
+import 'package:recetarium/src/core/services/admob_service.dart';
+import 'package:recetarium/src/core/theme/bootstrap_icons.dart';
+import 'package:recetarium/src/core/widgets/ad_banner_widget.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_favorite_provider.dart';
+import 'package:recetarium/src/features/recipes/data/steps_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/steps_screen.dart';
+import 'package:recetarium/src/features/shopping_cart/data/car_shop_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:resetas/src/features/recipes/ui/ingredients_utensil.dart'; // Re-añadido import
 
 class RecipeDetailScreen extends StatelessWidget {
   final RecipesModel recipe;
@@ -17,6 +20,9 @@ class RecipeDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shopProvider = Provider.of<CarShopProvider>(context, listen: false);
+    final currentUser = context.watch<AuthProvider>().user;
+    final isCreator = recipe.isCreatedByUser(currentUser);
+    final showAds = recipe.shouldShowAdsForUser(currentUser);
     final size = MediaQuery.of(context).size;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -57,18 +63,18 @@ class RecipeDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      extendBodyBehindAppBar: true,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- HEADER IMAGE ---
-            Stack(
-              children: [
-                Container(
-                  height: size.height * 0.45,
-                  width: double.infinity,
-                  margin: const EdgeInsets.fromLTRB(16, 100, 16, 20),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- HEADER IMAGE ---
+              Stack(
+                children: [
+                  Container(
+                    height: size.height * 0.42,
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(40),
                     boxShadow: [
@@ -200,33 +206,94 @@ class RecipeDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            "Precio",
+                            recipe.isFree ? "Acceso" : "Precio",
                             style:
                                 TextStyle(fontSize: 12, color: Colors.grey[500]),
                           ),
-                          Text(
-                            "\$${recipe.price}",
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary),
-                          ),
+                          if (recipe.isFree)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                isCreator ? "GRATIS (Tu receta)" : "GRATIS",
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              "\$${recipe.price}",
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.primary),
+                            ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  if (showAds) ...[
+                    const AdBannerWidget(
+                      placementLabel:
+                          'Receta Gratuita Patrocinada • Google AdMob',
+                      margin: EdgeInsets.only(bottom: 16),
+                    ),
+                  ],
 
                   // --- ACTION BUTTONS ---
                   Row(
                     children: [
-                      // Buy/Cart Button
+                      // Buy/Cart Button OR Cook / Watch Ad Button for free or own recipes
                       Expanded(
                         child: _DetailActionButton(
-                          icon: Bootstrap.basket_fill,
-                          label: "Comprar",
-                          color: colorScheme.secondary,
-                          onPressed: () {
+                          icon: isCreator
+                              ? Icons.play_arrow_rounded
+                              : (recipe.isFree
+                                  ? Icons.ondemand_video_rounded
+                                  : Bootstrap.basket_fill),
+                          label: isCreator
+                              ? "Cocinar"
+                              : (recipe.isFree
+                                  ? "Ver Anuncio y Cocinar"
+                                  : "Comprar"),
+                          color: (recipe.isFree || isCreator)
+                              ? const Color(0xFF16A34A)
+                              : colorScheme.secondary,
+                          onPressed: () async {
+                            if (recipe.isFree || isCreator) {
+                              if (showAds) {
+                                final unlocked = await AdMobService.instance
+                                    .showRewardedAdToUnlockRecipe(
+                                  context,
+                                  recipeName: recipe.nameRecipe,
+                                );
+                                if (!unlocked || !context.mounted) return;
+                              }
+                              if (recipe.id != null) {
+                                await context
+                                    .read<StepsProvider>()
+                                    .fetchSteps(recipe.id!);
+                              }
+                              if (!context.mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => StepsScreen(recipe: recipe),
+                                ),
+                              );
+                              return;
+                            }
                             shopProvider.addToCart(recipe);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -290,18 +357,22 @@ class RecipeDetailScreen extends StatelessWidget {
                         );
                       },
                       icon: const Icon(Icons.favorite_rounded),
-                      label: const Text(
-                        "Añadir a favoritos",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          "Añadir a favoritos",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -329,6 +400,7 @@ class _DetailActionButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -336,9 +408,14 @@ class _DetailActionButton extends StatelessWidget {
         ),
         onPressed: onPressed,
         icon: Icon(icon, size: 20),
-        label: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        label: Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          ),
         ),
       ),
     );

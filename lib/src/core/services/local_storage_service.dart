@@ -66,12 +66,28 @@ class LocalStorageService {
   Future<void> saveAuthData({
     required String token,
     required Map<String, dynamic> userData,
+    String? refreshToken,
   }) async {
     await _authBox.put('access_token', token);
     await _authBox.put('user', userData);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await _authBox.put('refresh_token', refreshToken);
+    }
+  }
+
+  Future<void> updateTokens({
+    required String token,
+    String? refreshToken,
+  }) async {
+    await _authBox.put('access_token', token);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await _authBox.put('refresh_token', refreshToken);
+    }
   }
 
   String? get token => _authBox.get('access_token') as String?;
+
+  String? get refreshToken => _authBox.get('refresh_token') as String?;
   
   Map<String, dynamic>? get userData {
     final data = _authBox.get('user');

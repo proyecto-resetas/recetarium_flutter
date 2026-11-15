@@ -7,6 +7,8 @@ class CustomMainButton extends StatelessWidget {
   final Color? color;
   final Color textColor;
   final double height;
+  final double fontSize;
+  final bool isLoading;
 
   const CustomMainButton({
     super.key,
@@ -16,6 +18,8 @@ class CustomMainButton extends StatelessWidget {
     this.color,
     this.textColor = Colors.white,
     this.height = 55,
+    this.fontSize = 16,
+    this.isLoading = false,
   });
 
   @override
@@ -38,34 +42,49 @@ class CustomMainButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: effectiveColor,
+          disabledBackgroundColor: effectiveColor.withValues(alpha: 0.65),
           foregroundColor: textColor,
+          disabledForegroundColor: textColor.withValues(alpha: 0.9),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 0,
         ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: textColor,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: Text(
+                        text,
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  if (icon != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(icon, size: 20),
+                  ],
+                ],
               ),
-            ),
-            if (icon != null) ...[
-              const SizedBox(width: 8),
-              Icon(icon, size: 22),
-            ],
-          ],
-        ),
       ),
     );
   }

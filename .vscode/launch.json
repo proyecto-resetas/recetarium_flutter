@@ -6,18 +6,18 @@
     "configurations": [
         
         {
-            "name": "resetas",
+            "name": "recetarium",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "resetas (profile mode)",
+            "name": "recetarium (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "resetas (release mode)",
+            "name": "recetarium (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/image_card.dart';
-import 'package:resetas/src/features/admin/data/super_admin_provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/data/my_recipes_created_provider.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/image_card.dart';
+import 'package:recetarium/src/features/admin/data/super_admin_provider.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/data/my_recipes_created_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
 
 class SuperAdminPanelScreen extends StatefulWidget {
   final bool embedded;
@@ -482,14 +482,25 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
     Map<String, dynamic> role,
   ) async {
     final colors = Theme.of(context).colorScheme;
+    final adminProvider = context.read<SuperAdminProvider>();
     final roleId = (role['_id'] ?? role['id'] ?? '').toString();
     final roleName = (role['name'] ?? '').toString();
     final displayCtrl = TextEditingController(
       text: (role['displayName'] ?? roleName).toString(),
     );
+    final descCtrl = TextEditingController(
+      text: (role['description'] ?? '').toString(),
+    );
     final Set<String> activePerms = {
       ...((role['permissions'] as List?)?.map((e) => e.toString()) ?? []),
     };
+
+    final dbPerms = adminProvider.permissions;
+    final List<Map<String, dynamic>> catalogItems = dbPerms.isNotEmpty
+        ? dbPerms
+        : _availablePermissionsCatalog
+            .map((k) => {'key': k, 'name': k, 'isActive': true})
+            .toList();
 
     await showModalBottomSheet(
       context: context,
@@ -509,6 +520,400 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                   top: 16,
                   bottom: MediaQuery.of(context).viewInsets.bottom + 24,
                 ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.85,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Permisos del Rol: $roleName',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: colors.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        CustomIconInput(
+                          controller: displayCtrl,
+                          label: 'Nombre visible',
+                          hintText: 'Ej: Chef (Creador)',
+                          prefixIcon: Icons.badge_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomIconInput(
+                          controller: descCtrl,
+                          label: 'Descripción del rol',
+                          hintText: 'Describe qué hace este rol…',
+                          prefixIcon: Icons.notes_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Permisos desde Base de Datos (${activePerms.length} seleccionados):',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: colors.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: catalogItems.map((permObj) {
+                            final permKey =
+                                (permObj['key'] ?? '').toString().trim();
+                            final permName =
+                                (permObj['name'] ?? permKey).toString().trim();
+                            final isPermActive = permObj['isActive'] != false;
+                            final selected = activePerms.contains(permKey);
+                            return FilterChip(
+                              tooltip: permName,
+                              label: Text(
+                                permName != permKey
+                                    ? '$permKey ($permName)'
+                                    : permKey,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  decoration: isPermActive
+                                      ? null
+                                      : TextDecoration.lineThrough,
+                                  fontWeight: selected
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                              selected: selected,
+                              selectedColor:
+                                  colors.primary.withValues(alpha: 0.18),
+                              checkmarkColor: colors.primary,
+                              backgroundColor:
+                                  colors.secondary.withValues(alpha: 0.05),
+                              side: BorderSide(
+                                color: selected
+                                    ? colors.primary.withValues(alpha: 0.5)
+                                    : colors.secondary.withValues(alpha: 0.12),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              onSelected: (val) {
+                                setModalState(() {
+                                  if (val) {
+                                    activePerms.add(permKey);
+                                  } else {
+                                    activePerms.remove(permKey);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.secondary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              await context
+                                  .read<SuperAdminProvider>()
+                                  .updateRolePermissions(
+                                    roleId,
+                                    activePerms.toList(),
+                                    displayName: displayCtrl.text.trim(),
+                                    description: descCtrl.text.trim(),
+                                  );
+                              if (!sheetCtx.mounted) return;
+                              Navigator.pop(sheetCtx);
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    content: Text(
+                                      'Permisos del rol "$roleName" guardados en base de datos.',
+                                    ),
+                                  ),
+                                );
+                            },
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Guardar permisos en BD',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _openCreateRoleModal(BuildContext context) async {
+    final colors = Theme.of(context).colorScheme;
+    final adminProvider = context.read<SuperAdminProvider>();
+    final nameCtrl = TextEditingController();
+    final displayCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final Set<String> selectedPerms = {'recipes:read', 'steps:read'};
+
+    final dbPerms = adminProvider.permissions;
+    final List<Map<String, dynamic>> catalogItems = dbPerms.isNotEmpty
+        ? dbPerms
+        : _availablePermissionsCatalog
+            .map((k) => {'key': k, 'name': k, 'isActive': true})
+            .toList();
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Crear Nuevo Rol en Base de Datos',
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            color: colors.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        CustomIconInput(
+                          controller: nameCtrl,
+                          label: 'Identificador técnico (slug)',
+                          hintText: 'Ej: moderador, editor_recetas',
+                          prefixIcon: Icons.key_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomIconInput(
+                          controller: displayCtrl,
+                          label: 'Nombre visible',
+                          hintText: 'Ej: Moderador de Contenido',
+                          prefixIcon: Icons.badge_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomIconInput(
+                          controller: descCtrl,
+                          label: 'Descripción',
+                          hintText: 'Ej: Revisa y edita recetas publicadas',
+                          prefixIcon: Icons.notes_rounded,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Selecciona los permisos iniciales (${selectedPerms.length}):',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: colors.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: catalogItems.map((permObj) {
+                            final permKey =
+                                (permObj['key'] ?? '').toString().trim();
+                            final selected = selectedPerms.contains(permKey);
+                            return FilterChip(
+                              label: Text(
+                                permKey,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: selected
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: colors.secondary,
+                                ),
+                              ),
+                              selected: selected,
+                              selectedColor:
+                                  colors.primary.withValues(alpha: 0.18),
+                              checkmarkColor: colors.primary,
+                              backgroundColor:
+                                  colors.secondary.withValues(alpha: 0.05),
+                              onSelected: (val) {
+                                setModalState(() {
+                                  if (val) {
+                                    selectedPerms.add(permKey);
+                                  } else {
+                                    selectedPerms.remove(permKey);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 22),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.secondary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () async {
+                              final rawName = nameCtrl.text
+                                  .trim()
+                                  .toLowerCase()
+                                  .replaceAll(' ', '_');
+                              final display = displayCtrl.text.trim();
+                              if (rawName.isEmpty || display.isEmpty) return;
+
+                              final ok = await adminProvider.createNewRole(
+                                name: rawName,
+                                displayName: display,
+                                description: descCtrl.text.trim(),
+                                permissions: selectedPerms.toList(),
+                              );
+                              if (!sheetCtx.mounted) return;
+                              Navigator.pop(sheetCtx);
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  SnackBar(
+                                    behavior: SnackBarBehavior.floating,
+                                    content: Text(
+                                      ok
+                                          ? 'Rol "$display" creado en base de datos.'
+                                          : 'No se pudo crear el rol.',
+                                    ),
+                                  ),
+                                );
+                            },
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Crear rol',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _openCreatePermissionModal(BuildContext context) async {
+    final colors = Theme.of(context).colorScheme;
+    final adminProvider = context.read<SuperAdminProvider>();
+    final keyCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    String selectedModule = 'recipes';
+
+    const modules = [
+      'recipes',
+      'steps',
+      'users',
+      'profile',
+      's3',
+      'roles',
+      'system',
+    ];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -526,73 +931,77 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Permisos del Rol: $roleName',
+                        'Registrar Permiso en Base de Datos',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 19,
                           fontWeight: FontWeight.w800,
                           color: colors.secondary,
                         ),
                       ),
                       const SizedBox(height: 14),
-                      CustomIconInput(
-                        controller: displayCtrl,
-                        label: 'Nombre visible',
-                        hintText: 'Ej: Chef (Creador)',
-                        prefixIcon: Icons.badge_outlined,
-                      ),
-                      const SizedBox(height: 16),
                       Text(
-                        'Selecciona los permisos activos (${activePerms.length}):',
+                        'Módulo',
                         style: TextStyle(
-                          fontSize: 13.5,
+                          fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: colors.secondary,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: _availablePermissionsCatalog.map((perm) {
-                          final selected = activePerms.contains(perm);
-                          return FilterChip(
+                        children: modules.map((mod) {
+                          final sel = selectedModule == mod;
+                          return ChoiceChip(
                             label: Text(
-                              perm,
+                              mod,
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: selected
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
+                                fontWeight:
+                                    sel ? FontWeight.w800 : FontWeight.w600,
                                 color: colors.secondary,
                               ),
                             ),
-                            selected: selected,
+                            selected: sel,
                             selectedColor:
                                 colors.primary.withValues(alpha: 0.18),
-                            checkmarkColor: colors.primary,
                             backgroundColor:
                                 colors.secondary.withValues(alpha: 0.05),
-                            side: BorderSide(
-                              color: selected
-                                  ? colors.primary.withValues(alpha: 0.5)
-                                  : colors.secondary.withValues(alpha: 0.12),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            onSelected: (val) {
+                            onSelected: (_) {
                               setModalState(() {
-                                if (val) {
-                                  activePerms.add(perm);
-                                } else {
-                                  activePerms.remove(perm);
+                                selectedModule = mod;
+                                if (keyCtrl.text.trim().isEmpty ||
+                                    !keyCtrl.text.contains(':')) {
+                                  keyCtrl.text = '$mod:';
                                 }
                               });
                             },
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 14),
+                      CustomIconInput(
+                        controller: keyCtrl,
+                        label: 'Clave única (modulo:accion)',
+                        hintText: 'Ej: recipes:export',
+                        prefixIcon: Icons.vpn_key_outlined,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomIconInput(
+                        controller: nameCtrl,
+                        label: 'Nombre descriptivo',
+                        hintText: 'Ej: Exportar recetas',
+                        prefixIcon: Icons.label_outline_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      CustomIconInput(
+                        controller: descCtrl,
+                        label: 'Descripción',
+                        hintText: 'Explica qué autoriza este permiso…',
+                        prefixIcon: Icons.notes_rounded,
+                      ),
+                      const SizedBox(height: 22),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -606,13 +1015,16 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                             elevation: 0,
                           ),
                           onPressed: () async {
-                            await context
-                                .read<SuperAdminProvider>()
-                                .updateRolePermissions(
-                                  roleId,
-                                  activePerms.toList(),
-                                  displayName: displayCtrl.text.trim(),
-                                );
+                            final key = keyCtrl.text.trim();
+                            final name = nameCtrl.text.trim();
+                            if (key.isEmpty || name.isEmpty) return;
+
+                            final ok = await adminProvider.createNewPermission(
+                              key: key,
+                              name: name,
+                              module: selectedModule,
+                              description: descCtrl.text.trim(),
+                            );
                             if (!sheetCtx.mounted) return;
                             Navigator.pop(sheetCtx);
                             ScaffoldMessenger.of(context)
@@ -621,16 +1033,21 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                                 SnackBar(
                                   behavior: SnackBarBehavior.floating,
                                   content: Text(
-                                    'Permisos del rol "$roleName" actualizados.',
+                                    ok
+                                        ? 'Permiso "$key" guardado en MongoDB.'
+                                        : 'No se pudo crear el permiso (verifica si ya existe).',
                                   ),
                                 ),
                               );
                           },
-                          child: const Text(
-                            'Guardar permisos',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Guardar permiso en BD',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),
@@ -2002,49 +2419,57 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: ['user', 'admin', 'super_admin'].contains(role)
-                              ? role
-                              : 'user',
-                          isDense: true,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: colors.secondary,
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 'user',
-                              child: Text('Usuario'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'admin',
-                              child: Text('Chef (admin)'),
-                            ),
-                            DropdownMenuItem(
-                              value: 'super_admin',
-                              child: Text('Super Admin'),
-                            ),
-                          ],
-                          onChanged: (newRole) async {
-                            if (newRole == null || newRole == role) return;
-                            final ok = await adminProvider.changeUserRole(
-                              userId,
-                              newRole,
+                        child: Builder(
+                          builder: (context) {
+                            final availableRoleNames = <String>{
+                              'user',
+                              'admin',
+                              'super_admin',
+                              ...adminProvider.roles.map(
+                                (r) => (r['name'] ?? '').toString().trim(),
+                              ),
+                            }..removeWhere((e) => e.isEmpty);
+
+                            final currentRoleValue =
+                                availableRoleNames.contains(role)
+                                    ? role
+                                    : 'user';
+
+                            return DropdownButton<String>(
+                              value: currentRoleValue,
+                              isDense: true,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: colors.secondary,
+                              ),
+                              items: availableRoleNames.map((rName) {
+                                return DropdownMenuItem<String>(
+                                  value: rName,
+                                  child: Text(_roleLabel(rName)),
+                                );
+                              }).toList(),
+                              onChanged: (newRole) async {
+                                if (newRole == null || newRole == role) return;
+                                final ok = await adminProvider.changeUserRole(
+                                  userId,
+                                  newRole,
+                                );
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context)
+                                  ..hideCurrentSnackBar()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                      behavior: SnackBarBehavior.floating,
+                                      content: Text(
+                                        ok
+                                            ? 'Rol de $username actualizado a ${_roleLabel(newRole)}.'
+                                            : 'No se pudo cambiar el rol.',
+                                      ),
+                                    ),
+                                  );
+                              },
                             );
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                SnackBar(
-                                  behavior: SnackBarBehavior.floating,
-                                  content: Text(
-                                    ok
-                                        ? 'Rol de $username actualizado a ${_roleLabel(newRole)}.'
-                                        : 'No se pudo cambiar el rol.',
-                                  ),
-                                ),
-                              );
                           },
                         ),
                       ),
@@ -2115,6 +2540,7 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
     SuperAdminProvider adminProvider,
   ) {
     final roles = adminProvider.roles;
+    final dbPermissions = adminProvider.permissions;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -2133,21 +2559,57 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Roles y Permisos Dinámicos',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: colors.secondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Configura qué acciones puede ejecutar cada rol en el backend en tiempo real.',
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.onSurface.withValues(alpha: 0.6),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Roles y Permisos en Base de Datos',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: colors.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Configura roles y el catálogo de permisos almacenados en MongoDB en tiempo real.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colors.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.secondary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => _openCreateRoleModal(context),
+                icon: const Icon(Icons.add_moderator_rounded, size: 16),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Nuevo rol',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           ListView.separated(
@@ -2180,28 +2642,31 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '$displayName ($name)',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: colors.secondary,
-                              ),
-                            ),
-                            if (description.isNotEmpty)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                description,
+                                '$displayName ($name)',
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: colors.onSurface
-                                      .withValues(alpha: 0.6),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: colors.secondary,
                                 ),
                               ),
-                          ],
+                              if (description.isNotEmpty)
+                                Text(
+                                  description,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colors.onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         InkWell(
                           borderRadius: BorderRadius.circular(14),
                           onTap: () =>
@@ -2271,6 +2736,175 @@ class _SuperAdminPanelScreenState extends State<SuperAdminPanelScreen> {
                     ),
                   ],
                 ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          Divider(color: colors.secondary.withValues(alpha: 0.1)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Catálogo de Permisos en BD (${dbPermissions.length})',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: colors.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Si desactivas un permiso aquí, queda deshabilitado globalmente para los roles.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.secondary,
+                  side: BorderSide(
+                    color: colors.primary.withValues(alpha: 0.5),
+                  ),
+                  backgroundColor: colors.primary.withValues(alpha: 0.12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => _openCreatePermissionModal(context),
+                icon: const Icon(Icons.vpn_key_rounded, size: 15),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Nuevo permiso',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: dbPermissions.length,
+            separatorBuilder: (_, __) => Divider(
+              color: colors.secondary.withValues(alpha: 0.08),
+              height: 12,
+            ),
+            itemBuilder: (context, index) {
+              final perm = dbPermissions[index];
+              final permId = (perm['_id'] ?? perm['id'] ?? '').toString();
+              final permKey = (perm['key'] ?? '').toString();
+              final permName = (perm['name'] ?? permKey).toString();
+              final permModule = (perm['module'] ?? 'general').toString();
+              final permDesc = (perm['description'] ?? '').toString();
+              final isActive = perm['isActive'] != false;
+
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? colors.primary.withValues(alpha: 0.14)
+                          : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      permModule.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: isActive ? colors.secondary : Colors.grey,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$permName ($permKey)',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            decoration:
+                                isActive ? null : TextDecoration.lineThrough,
+                            color: isActive
+                                ? colors.secondary
+                                : colors.onSurface.withValues(alpha: 0.45),
+                          ),
+                        ),
+                        if (permDesc.isNotEmpty)
+                          Text(
+                            permDesc,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: colors.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: isActive,
+                    activeTrackColor: colors.primary.withValues(alpha: 0.4),
+                    activeThumbColor: colors.secondary,
+                    onChanged: permKey == '*'
+                        ? null
+                        : (val) async {
+                            await adminProvider.togglePermissionActive(
+                              permId,
+                              val,
+                            );
+                          },
+                  ),
+                  if (permKey != '*')
+                    IconButton(
+                      tooltip: 'Eliminar permiso de la BD',
+                      onPressed: () async {
+                        final ok = await adminProvider.removePermission(permId);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            SnackBar(
+                              behavior: SnackBarBehavior.floating,
+                              content: Text(
+                                ok
+                                    ? 'Permiso "$permKey" eliminado de la BD.'
+                                    : 'No se pudo eliminar el permiso.',
+                              ),
+                            ),
+                          );
+                      },
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 19,
+                        color: Color(0xFFE53935),
+                      ),
+                    ),
+                ],
               );
             },
           ),

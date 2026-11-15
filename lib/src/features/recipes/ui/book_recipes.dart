@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/data/my_recipes_created_provider.dart';
-import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/my_recipes_created.dart';
-import 'package:resetas/src/features/recipes/ui/my_recipes_favorite.dart';
-import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
-import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
-import 'package:resetas/src/features/shopping_cart/ui/my_purchased_recipes.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/data/my_recipes_created_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_favorite_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/my_recipes_created.dart';
+import 'package:recetarium/src/features/recipes/ui/my_recipes_favorite.dart';
+import 'package:recetarium/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
+import 'package:recetarium/src/features/shopping_cart/data/car_shop_provider.dart';
+import 'package:recetarium/src/features/shopping_cart/ui/my_purchased_recipes.dart';
 
 class BookRecipes extends StatefulWidget {
   final VoidCallback? onCreateRecipeTap;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
 
 enum RecipeSortOption {
   none,
@@ -428,6 +428,12 @@ class RecipeFiltersHeaderWidget extends StatelessWidget {
   final ValueChanged<String?> onCategorySelected;
   final ValueChanged<String?> onLevelSelected;
   final VoidCallback onOpenFilterModal;
+  final bool showIngredientTagsSlider;
+  final List<String> ingredientTags;
+  final List<String> suggestedIngredients;
+  final ValueChanged<String>? onAddIngredientTag;
+  final ValueChanged<String>? onRemoveIngredientTag;
+  final VoidCallback? onAddCurrentTextAsTag;
 
   const RecipeFiltersHeaderWidget({
     super.key,
@@ -443,6 +449,12 @@ class RecipeFiltersHeaderWidget extends StatelessWidget {
     required this.onCategorySelected,
     required this.onLevelSelected,
     required this.onOpenFilterModal,
+    this.showIngredientTagsSlider = false,
+    this.ingredientTags = const [],
+    this.suggestedIngredients = const [],
+    this.onAddIngredientTag,
+    this.onRemoveIngredientTag,
+    this.onAddCurrentTextAsTag,
   });
 
   int get _activeAdvancedCount {
@@ -471,6 +483,7 @@ class RecipeFiltersHeaderWidget extends StatelessWidget {
                 prefixIcon: Icons.search_rounded,
                 textInputAction: TextInputAction.search,
                 onCleared: onSearchCleared,
+                onAddTag: onAddCurrentTextAsTag,
                 onChanged: onSearchChanged,
                 onSubmitted: onSearchSubmitted,
               ),
@@ -526,7 +539,14 @@ class RecipeFiltersHeaderWidget extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+
+        // ─── Slider Horizontal de Tags de Ingredientes ──────────────────────
+        if (showIngredientTagsSlider) ...[
+          _buildIngredientTagsSlider(colors),
+          const SizedBox(height: 10),
+        ] else
+          const SizedBox(height: 2),
 
         // ─── Píldoras de Categorías Centradas ───────────────────────────────
         Center(
@@ -673,6 +693,89 @@ class RecipeFiltersHeaderWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildIngredientTagsSlider(ColorScheme colors) {
+    final activeLower = ingredientTags.map((e) => e.toLowerCase()).toSet();
+    final remainingSuggestions = suggestedIngredients
+        .where((s) => !activeLower.contains(s.toLowerCase()))
+        .toList();
+
+    return SizedBox(
+      height: 34,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          ...ingredientTags.map((tag) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => onRemoveIngredientTag?.call(tag),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.secondary,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tag,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          ...remainingSuggestions.map((suggestion) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => onAddIngredientTag?.call(suggestion),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: colors.secondary.withValues(alpha: 0.14),
+                    ),
+                  ),
+                  child: Text(
+                    '+ $suggestion',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: colors.secondary.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }

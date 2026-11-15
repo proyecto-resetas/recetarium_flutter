@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/image_card.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
-import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
+import 'package:recetarium/src/core/widgets/image_card.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_favorite_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/widgets/recipe_filters_bar.dart';
+import 'package:recetarium/src/features/shopping_cart/data/car_shop_provider.dart';
 
 class MyRecipesFavorites extends StatefulWidget {
   final bool embedded;
@@ -235,7 +235,7 @@ class _MyRecipesFavoritesState extends State<MyRecipesFavorites> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: content,
+      body: SafeArea(child: content),
     );
   }
 

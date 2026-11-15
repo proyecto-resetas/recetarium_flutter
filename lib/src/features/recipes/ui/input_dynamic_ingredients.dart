@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/core/utils/input_sanitizers.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
 
 class InputDynamicIngredients extends StatefulWidget {
   const InputDynamicIngredients({super.key});
@@ -11,11 +12,9 @@ class InputDynamicIngredients extends StatefulWidget {
   _InputDynamicIngredientsState createState() => _InputDynamicIngredientsState();
 }
 class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
-  // Lista para almacenar los controladores de los inputs
   final List<TextEditingController> _controllersDescription = [];
   final List<TextEditingController> _controllersAmount = [];
   final List<TextEditingController> _controllersUtencilio = [];
-
 
   @override
   void initState() {
@@ -27,9 +26,11 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
     if (viewRecipesProvider.selectedIngredient.isNotEmpty) {
       for (var ingredient in viewRecipesProvider.selectedIngredient) {
         _controllersDescription.add(
-            TextEditingController(text: ingredient['description'] ?? ''));
+          TextEditingController(text: ingredient['description'] ?? ''),
+        );
         _controllersAmount.add(
-            TextEditingController(text: ingredient['amount'] ?? ''));
+          TextEditingController(text: ingredient['amount'] ?? ''),
+        );
       }
     } else {
       _controllersDescription.add(TextEditingController());
@@ -39,46 +40,72 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
     // Cargar utensilios existentes si los hay
     if (viewRecipesProvider.selectedUtensil.isNotEmpty) {
       for (var utensil in viewRecipesProvider.selectedUtensil) {
-        _controllersUtencilio
-            .add(TextEditingController(text: utensil['utensil'] ?? ''));
+        _controllersUtencilio.add(
+          TextEditingController(text: utensil['utensil'] ?? ''),
+        );
       }
     } else {
       _controllersUtencilio.add(TextEditingController());
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncToGlobalState());
   }
 
-  // Función para agregar un nuevo input dinámico
+  /// Sincroniza automáticamente los ingredientes y utensilios en el estado
+  /// temporal de [ViewRecipesProvider] sin necesidad de un botón "Save".
+  void _syncToGlobalState() {
+    if (!mounted) return;
+    final viewRecipesProvider =
+        Provider.of<ViewRecipesProvider>(context, listen: false);
+
+    final ingredients = <Map<String, dynamic>>[];
+    for (int i = 0; i < _controllersDescription.length; i++) {
+      ingredients.add({
+        'description': _controllersDescription[i].text,
+        'amount': _controllersAmount[i].text,
+      });
+    }
+    viewRecipesProvider.syncIngredients(ingredients);
+
+    final utensils = <Map<String, dynamic>>[];
+    for (int i = 0; i < _controllersUtencilio.length; i++) {
+      utensils.add({
+        'utensil': _controllersUtencilio[i].text,
+      });
+    }
+    viewRecipesProvider.syncUtensils(utensils);
+  }
+
   void _addInput() {
     setState(() {
-      _controllersDescription.add(TextEditingController()); // Agrega un nuevo controlador de texto
-      _controllersAmount.add(TextEditingController()); // Agrega un nuevo controlador de texto
+      _controllersDescription.add(TextEditingController());
+      _controllersAmount.add(TextEditingController());
     });
+    _syncToGlobalState();
   }
 
-   void _addInputUtencilio() {
+  void _removeIngredientAt(int index) {
+    if (_controllersDescription.length <= 1) return;
+    setState(() {
+      _controllersDescription.removeAt(index).dispose();
+      _controllersAmount.removeAt(index).dispose();
+    });
+    _syncToGlobalState();
+  }
+
+  void _addInputUtencilio() {
     setState(() {
       _controllersUtencilio.add(TextEditingController());
     });
+    _syncToGlobalState();
   }
 
-  // Función para guardar los valores de los inputs en el estado global
-  void _saveStepsToGlobalState(BuildContext context) {
-    final viewRecipesProvider = Provider.of<ViewRecipesProvider>(context, listen: false);
-
-    viewRecipesProvider.clearIngredients();
-    for (int i = 0; i < _controllersDescription.length; i++) {
-      String description = _controllersDescription[i].text;
-      String amount = _controllersAmount[i].text;
-
-      viewRecipesProvider.addIngredient(description, amount); // Guarda el paso en el estado global
-    }
-
-    viewRecipesProvider.clearUtensils();
-    for (int i = 0; i < _controllersUtencilio.length; i++) {
-      String utensil = _controllersUtencilio[i].text;
-
-      viewRecipesProvider.addUtensil(utensil); // Guarda el paso en el estado global
-    }  
+  void _removeUtensilAt(int index) {
+    if (_controllersUtencilio.length <= 1) return;
+    setState(() {
+      _controllersUtencilio.removeAt(index).dispose();
+    });
+    _syncToGlobalState();
   }
 
   @override
@@ -101,26 +128,51 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                     padding: const EdgeInsets.only(bottom: 15.0),
                     child: Column(
                       children: [
-                        CustomIconInput(
-                          controller: _controllersDescription[index],
-                          hintText: 'Ingredient ${index + 1} name',
-                          prefixIcon: Icons.restaurant_rounded,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter the ingredient';
-                            }
-                            return null;
-                          },
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: CustomIconInput(
+                                controller: _controllersDescription[index],
+                                hintText: 'Ingredient ${index + 1} name',
+                                prefixIcon: Icons.restaurant_rounded,
+                                maxLength: 60,
+                                inputFormatters: InputSanitizers.safeText,
+                                onChanged: (_) => _syncToGlobalState(),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Ingresa el nombre del ingrediente';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            if (_controllersDescription.length > 1) ...[
+                              const SizedBox(width: 8),
+                              IconButton(
+                                tooltip: 'Eliminar ingrediente',
+                                onPressed: () => _removeIngredientAt(index),
+                                icon: const Icon(
+                                  Icons.remove_circle_outline_rounded,
+                                  color: Color(0xFFD62828),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 10),
                         CustomIconInput(
                           controller: _controllersAmount[index],
-                          hintText: 'Amount (e.g. 200g, 2 units)',
+                          hintText: 'Ej: 200g, 2 unidades, 1/2 taza',
+                          helperText: 'Incluye número y unidad de medida.',
                           prefixIcon: Icons.scale_rounded,
                           keyboardType: TextInputType.text,
+                          maxLength: 30,
+                          inputFormatters: InputSanitizers.safeAlphanumeric,
+                          onChanged: (_) => _syncToGlobalState(),
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter the Amount';
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Ingresa la cantidad del ingrediente';
                             }
                             return null;
                           },
@@ -150,48 +202,48 @@ class _InputDynamicIngredientsState extends State<InputDynamicIngredients> {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 15.0),
-                    child: CustomIconInput(
-                      controller: _controllersUtencilio[index],
-                      hintText: 'Utensil ${index + 1}',
-                      prefixIcon: Icons.handyman_rounded,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter the Utensil';
-                        }
-                        return null;
-                      },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: CustomIconInput(
+                            controller: _controllersUtencilio[index],
+                            hintText: 'Utensil ${index + 1}',
+                            prefixIcon: Icons.handyman_rounded,
+                            maxLength: 50,
+                            inputFormatters: InputSanitizers.safeText,
+                            onChanged: (_) => _syncToGlobalState(),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Ingresa el nombre del utensilio';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        if (_controllersUtencilio.length > 1) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            tooltip: 'Eliminar utensilio',
+                            onPressed: () => _removeUtensilAt(index),
+                            icon: const Icon(
+                              Icons.remove_circle_outline_rounded,
+                              color: Color(0xFFD62828),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   );
                 },
               ),
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: CustomMainButton(
-                    text: 'Add Utensil',
-                    icon: Icons.add_to_photos_rounded,
-                    height: 45,
-                    color: colorScheme.secondary,
-                    onPressed: _addInputUtencilio,
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: CustomMainButton(
-                    text: 'Save Items',
-                    icon: Icons.check_circle_outline_rounded,
-                    height: 45,
-                    onPressed: () {
-                      _saveStepsToGlobalState(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Items saved locally')),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            CustomMainButton(
+              text: 'Add Utensil',
+              icon: Icons.add_to_photos_rounded,
+              height: 45,
+              color: colorScheme.secondary,
+              onPressed: _addInputUtencilio,
             ),
           ],
         ),

@@ -1,7 +1,7 @@
 // import 'dart:async';
 // //import 'dart:math';
 // import 'package:flutter/material.dart';
-// import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+// import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
 
 // class StepsScreen extends StatefulWidget {
 //   final RecipesModel recipe;
@@ -143,7 +143,7 @@
 // }
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/shopping_cart/data/payment_wompi_provider.dart';
+import 'package:recetarium/src/features/shopping_cart/data/payment_wompi_provider.dart';
 
 
 class PaymentScreen extends StatelessWidget {

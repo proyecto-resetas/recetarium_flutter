@@ -1,4 +1,4 @@
-import 'package:resetas/src/features/recipes/models/book_recipe_model.dart';
+import 'package:recetarium/src/features/recipes/models/book_recipe_model.dart';
 
 class UserResModel {
   final String id;
@@ -10,6 +10,9 @@ class UserResModel {
   final String city;
   final String photoUrl;
   final String role;
+  final List<String> permissions;
+  final Map<String, dynamic>? bankAccount;
+  final Map<String, dynamic>? billingInfo;
   final List<BookRecipe>? myFavorite;
   final List<BookRecipe>? myRecipe;
   final DateTime createdAt;
@@ -25,41 +28,80 @@ class UserResModel {
     required this.city,
     required this.photoUrl,
     required this.role,
+    this.permissions = const [],
+    this.bankAccount,
+    this.billingInfo,
     this.myFavorite,
     this.myRecipe,
     required this.createdAt,
     required this.updatedAt,
   });
 
+  bool hasPermission(String requiredPermission) {
+    if (role == 'super_admin' || permissions.contains('*')) {
+      return true;
+    }
+    if (permissions.contains(requiredPermission)) {
+      return true;
+    }
+    final parts = requiredPermission.split(':');
+    if (parts.isNotEmpty && permissions.contains('${parts[0]}:*')) {
+      return true;
+    }
+    if (parts.length == 3 &&
+        parts[2] == 'own' &&
+        permissions.contains('${parts[0]}:${parts[1]}')) {
+      return true;
+    }
+    return false;
+  }
+
   factory UserResModel.fromJsonModel(Map<String, dynamic> json) {
+    String parsedPhone = '';
+    if (json['phone'] is Map) {
+      final cc = (json['phone']['countryCode'] ?? '').toString().trim();
+      final num = (json['phone']['phoneNumber'] ?? '').toString().trim();
+      parsedPhone = [cc, num].where((s) => s.isNotEmpty).join(' ');
+    } else if (json['phone'] is String) {
+      parsedPhone = json['phone'] as String;
+    }
+
     return UserResModel(
       id: json['_id'] as String? ?? json['id'] as String? ?? '',
       username: json['username'] as String? ?? '',
       lastname: json['lastname'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      // Manejar phone como String o Map
-      phone: json['phone'] is Map
-          ? '${json['phone']['countryCode']} ${json['phone']['phoneNumber']}'
-          : json['phone'] as String? ?? '',
+      phone: parsedPhone,
       country: json['country'] as String? ?? '',
       city: json['city'] as String? ?? '',
       photoUrl: (json['photoUrl'] ?? json['photo_url']) as String? ?? '',
       role: json['role'] as String? ?? 'user',
-      myFavorite: json['myFavorite'] != null
+      permissions: json['permissions'] is List
+          ? (json['permissions'] as List).map((e) => e.toString()).toList()
+          : const [],
+      bankAccount: json['bankAccount'] is Map
+          ? Map<String, dynamic>.from(json['bankAccount'] as Map)
+          : null,
+      billingInfo: json['billingInfo'] is Map
+          ? Map<String, dynamic>.from(json['billingInfo'] as Map)
+          : null,
+      myFavorite: json['myFavorite'] is List
           ? (json['myFavorite'] as List)
-              .map((item) => BookRecipe.fromJson(item))
+              .whereType<Map>()
+              .map((item) => BookRecipe.fromJson(Map<String, dynamic>.from(item)))
               .toList()
           : [],
-      myRecipe: json['myRecipe'] != null
+      myRecipe: json['myRecipe'] is List
           ? (json['myRecipe'] as List)
-              .map((item) => BookRecipe.fromJson(item))
+              .whereType<Map>()
+              .map((item) => BookRecipe.fromJson(Map<String, dynamic>.from(item)))
               .toList()
           : [],
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }
@@ -75,6 +117,9 @@ class UserResModel {
       'city': city,
       'photoUrl': photoUrl,
       'role': role,
+      'permissions': permissions,
+      if (bankAccount != null) 'bankAccount': bankAccount,
+      if (billingInfo != null) 'billingInfo': billingInfo,
       'myFavorite': myFavorite?.map((item) => item.toJson()).toList(),
       'myRecipe': myRecipe?.map((item) => item.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),

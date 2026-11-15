@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/core/theme/bootstrap_icons.dart';
+import 'package:recetarium/src/core/theme/bootstrap_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/shopping_cart/data/car_shop_provider.dart';
-import 'package:resetas/src/features/recipes/data/recipes_favorite_provider.dart';
-//import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
-import 'package:resetas/src/features/recipes/ui/recipes_details.screen.dart';
-import 'package:resetas/src/core/widgets/image_card.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/shopping_cart/data/car_shop_provider.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_favorite_provider.dart';
+//import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/recipes/ui/recipes_details.screen.dart';
+import 'package:recetarium/src/core/widgets/image_card.dart';
 
 class CardRecipe extends StatelessWidget {
   final RecipesModel recipes;

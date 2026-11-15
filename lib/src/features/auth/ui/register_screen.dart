@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/user_profile/models/user.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/core/widgets/custom_icon_input.dart';
-import 'package:resetas/src/core/widgets/custom_select_field.dart';
-import 'package:resetas/src/core/widgets/custom_main_button.dart';
-import 'package:resetas/l10n/app_localizations.dart';
+import 'package:recetarium/src/features/user_profile/models/user.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/core/utils/input_sanitizers.dart';
+import 'package:recetarium/src/core/widgets/custom_icon_input.dart';
+import 'package:recetarium/src/core/widgets/custom_select_field.dart';
+import 'package:recetarium/src/core/widgets/custom_main_button.dart';
+import 'package:recetarium/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -45,10 +46,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () => context.pop(),
           )),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Hero Image
             Stack(
               children: [
@@ -112,9 +115,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           label: l10n.fullName,
                           hintText: l10n.firstNameHint,
                           prefixIcon: Icons.person_outline,
+                          maxLength: 50,
+                          inputFormatters: InputSanitizers.safeText,
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isEmpty) {
                               return l10n.pleaseEnterName;
+                            }
+                            if (trimmed.length < 2) {
+                              return 'El nombre debe tener al menos 2 caracteres';
                             }
                             return null;
                           },
@@ -125,9 +134,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           label: l10n.lastName,
                           hintText: l10n.lastNameHint,
                           prefixIcon: Icons.person_outline,
+                          maxLength: 50,
+                          inputFormatters: InputSanitizers.safeText,
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isEmpty) {
                               return l10n.pleaseEnterLastName;
+                            }
+                            if (trimmed.length < 2) {
+                              return 'El apellido debe tener al menos 2 caracteres';
                             }
                             return null;
                           },
@@ -139,9 +154,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           hintText: l10n.emailHint,
                           prefixIcon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
+                          maxLength: 100,
                           validator: (value) {
-                            if (value == null || value.isEmpty) {
+                            final trimmed = value?.trim() ?? '';
+                            if (trimmed.isEmpty) {
                               return l10n.pleaseEnterEmail;
+                            }
+                            if (!InputSanitizers.isValidEmail(trimmed)) {
+                              return 'Ingresa un correo electrónico válido';
                             }
                             return null;
                           },
@@ -151,11 +171,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: passwordController,
                           label: l10n.password,
                           hintText: l10n.passwordHint,
+                          helperText: 'Mínimo 6 caracteres.',
                           prefixIcon: Icons.lock_outline,
                           isPassword: true,
+                          maxLength: 64,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return l10n.pleaseEnterPassword;
+                            }
+                            if (value.length < 6) {
+                              return 'La contraseña debe tener al menos 6 caracteres';
                             }
                             return null;
                           },
@@ -294,6 +319,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

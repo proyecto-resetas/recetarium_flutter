@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:resetas/src/features/admin/data/super_admin_api_service.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/admin/data/super_admin_api_service.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
 
 class SuperAdminProvider extends ChangeNotifier {
   final SuperAdminApiService _api = SuperAdminApiService();
@@ -18,6 +18,7 @@ class SuperAdminProvider extends ChangeNotifier {
   List<RecipesModel> _recipes = [];
   List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _roles = [];
+  List<Map<String, dynamic>> _permissions = [];
   List<Map<String, dynamic>> _transactions = [];
 
   bool get isLoading => _isLoading;
@@ -33,7 +34,123 @@ class SuperAdminProvider extends ChangeNotifier {
   List<RecipesModel> get recipes => _recipes;
   List<Map<String, dynamic>> get users => _users;
   List<Map<String, dynamic>> get roles => _roles;
+  List<Map<String, dynamic>> get permissions => _permissions;
   List<Map<String, dynamic>> get transactions => _transactions;
+
+  static const List<Map<String, dynamic>> _fallbackPermissions = [
+    {
+      '_id': 'perm_recipes_read',
+      'key': 'recipes:read',
+      'name': 'Ver catálogo de recetas',
+      'module': 'recipes',
+      'description': 'Permite listar, filtrar y consultar recetas e ingredientes.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_recipes_create',
+      'key': 'recipes:create',
+      'name': 'Crear y publicar recetas',
+      'module': 'recipes',
+      'description': 'Permite crear nuevas recetas y usar IA.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_recipes_update',
+      'key': 'recipes:update',
+      'name': 'Actualizar recetas',
+      'module': 'recipes',
+      'description': 'Permite editar recetas creadas por el chef.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_recipes_delete',
+      'key': 'recipes:delete',
+      'name': 'Eliminar recetas',
+      'module': 'recipes',
+      'description': 'Permite eliminar recetas del catálogo.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_steps_read',
+      'key': 'steps:read',
+      'name': 'Ver pasos de recetas desbloqueadas',
+      'module': 'steps',
+      'description': 'Permite consultar el paso a paso de recetas compradas o propias.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_steps_create',
+      'key': 'steps:create',
+      'name': 'Crear pasos de preparación',
+      'module': 'steps',
+      'description': 'Permite registrar pasos dentro de una receta.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_steps_update',
+      'key': 'steps:update',
+      'name': 'Editar pasos de preparación',
+      'module': 'steps',
+      'description': 'Permite actualizar los pasos de una receta propia.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_users_read',
+      'key': 'users:read',
+      'name': 'Consultar datos de usuario',
+      'module': 'users',
+      'description': 'Permite consultar información del perfil de usuario.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_users_update',
+      'key': 'users:update',
+      'name': 'Actualizar datos de usuario',
+      'module': 'users',
+      'description': 'Permite actualizar datos personales, bancarios y de facturación.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_profile_read',
+      'key': 'profile:read',
+      'name': 'Ver mi perfil',
+      'module': 'profile',
+      'description': 'Permite visualizar la sección Mi Perfil.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_profile_update',
+      'key': 'profile:update',
+      'name': 'Editar mi perfil',
+      'module': 'profile',
+      'description': 'Permite editar datos personales, cuenta bancaria y facturación.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_s3_upload',
+      'key': 's3:upload',
+      'name': 'Subir imágenes a S3',
+      'module': 's3',
+      'description': 'Permite subir fotos de perfil, portadas e imágenes de pasos.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_roles_all',
+      'key': 'roles:*',
+      'name': 'Control total de roles y permisos',
+      'module': 'roles',
+      'description': 'Acceso completo a la configuración RBAC.',
+      'isActive': true,
+    },
+    {
+      '_id': 'perm_wildcard',
+      'key': '*',
+      'name': 'Super Administrador (Acceso Total)',
+      'module': 'system',
+      'description': 'Otorga todos los permisos del sistema.',
+      'isActive': true,
+    },
+  ];
 
   static const List<Map<String, dynamic>> _fallbackRoles = [
     {
@@ -94,18 +211,25 @@ class SuperAdminProvider extends ChangeNotifier {
         _api.getAllRecipes(),
         _api.getAllUsers(),
         _api.getAllRoles(),
+        _api.getAllPermissions(),
       ]);
 
       final stats = results[0] as Map<String, dynamic>?;
       final loadedRecipes = results[1] as List<RecipesModel>;
       final loadedUsers = results[2] as List<Map<String, dynamic>>;
       final loadedRoles = results[3] as List<Map<String, dynamic>>;
+      final loadedPermissions = results[4] as List<Map<String, dynamic>>;
 
       _recipes = loadedRecipes;
       _users = loadedUsers;
       _roles = loadedRoles.isNotEmpty
           ? loadedRoles
           : _fallbackRoles.map((e) => Map<String, dynamic>.from(e)).toList();
+      _permissions = loadedPermissions.isNotEmpty
+          ? loadedPermissions
+          : _fallbackPermissions
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
 
       if (stats != null) {
         _totalUsers = (stats['totalUsers'] as num?)?.toInt() ?? _users.length;
@@ -243,5 +367,78 @@ class SuperAdminProvider extends ChangeNotifier {
       return true;
     }
     return false;
+  }
+
+  Future<bool> createNewPermission({
+    required String key,
+    required String name,
+    required String module,
+    String? description,
+  }) async {
+    final created = await _api.createPermission(
+      key: key,
+      name: name,
+      module: module,
+      description: description,
+    );
+    if (created != null) {
+      _permissions.add(created);
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> togglePermissionActive(
+    String permissionId,
+    bool isActive,
+  ) async {
+    final updated = await _api.updatePermission(permissionId, {
+      'isActive': isActive,
+    });
+    final idx = _permissions.indexWhere(
+      (p) => (p['_id'] ?? p['id']).toString() == permissionId,
+    );
+    if (idx != -1) {
+      _permissions[idx] = updated ??
+          {
+            ..._permissions[idx],
+            'isActive': isActive,
+          };
+      notifyListeners();
+      return true;
+    }
+    return updated != null;
+  }
+
+  Future<bool> removePermission(String permissionId) async {
+    final ok = await _api.deletePermission(permissionId);
+    if (ok) {
+      final removed = _permissions.firstWhere(
+        (p) => (p['_id'] ?? p['id']).toString() == permissionId,
+        orElse: () => <String, dynamic>{},
+      );
+      final removedKey = (removed['key'] ?? '').toString();
+      _permissions.removeWhere(
+        (p) => (p['_id'] ?? p['id']).toString() == permissionId,
+      );
+      if (removedKey.isNotEmpty) {
+        for (int i = 0; i < _roles.length; i++) {
+          final currentPerms = (_roles[i]['permissions'] as List?)
+                  ?.map((e) => e.toString())
+                  .toList() ??
+              [];
+          if (currentPerms.contains(removedKey)) {
+            currentPerms.remove(removedKey);
+            _roles[i] = {
+              ..._roles[i],
+              'permissions': currentPerms,
+            };
+          }
+        }
+      }
+      notifyListeners();
+    }
+    return ok;
   }
 }

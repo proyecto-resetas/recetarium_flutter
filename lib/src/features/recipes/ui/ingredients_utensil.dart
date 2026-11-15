@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:resetas/src/core/theme/bootstrap_icons.dart';
+import 'package:recetarium/src/core/services/admob_service.dart';
+import 'package:recetarium/src/core/theme/bootstrap_icons.dart';
+import 'package:recetarium/src/core/widgets/ad_banner_widget.dart';
+import 'package:recetarium/src/core/widgets/custom_back_app_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:resetas/src/features/auth/data/auth_provider.dart';
-import 'package:resetas/src/features/recipes/models/recipes_model.dart';
-import 'package:resetas/src/features/recipes/ui/steps_screen.dart';
-import 'package:resetas/src/features/recipes/data/recipes_provider.dart';
+import 'package:recetarium/src/features/auth/data/auth_provider.dart';
+import 'package:recetarium/src/features/recipes/models/recipes_model.dart';
+import 'package:recetarium/src/features/recipes/ui/steps_screen.dart';
+import 'package:recetarium/src/features/recipes/data/recipes_provider.dart';
 
-import 'package:resetas/src/features/recipes/data/steps_provider.dart';
+import 'package:recetarium/src/features/recipes/data/steps_provider.dart';
 
 class IngredientsUtensil extends StatefulWidget {
   final RecipesModel recipe;
@@ -40,25 +43,14 @@ class _IngredientsUtensilState extends State<IngredientsUtensil> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final provider = context.watch<ViewRecipesProvider>();
+    final currentUser = context.watch<AuthProvider>().user;
+    final showAds = widget.recipe.shouldShowAdsForUser(currentUser);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FB),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded, color: Colors.black),
-        ),
-        title: Text(
-          widget.recipe.nameRecipe,
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        centerTitle: true,
+      appBar: CustomBackAppBar(
+        backgroundColor: const Color(0xFFF8F9FB),
+        title: widget.recipe.nameRecipe,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
@@ -85,14 +77,15 @@ class _IngredientsUtensilState extends State<IngredientsUtensil> {
           ),
         ],
       ),
-      body: provider.isLoadingIngredients
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
+      body: SafeArea(
+        child: provider.isLoadingIngredients
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
 
                   // --- INGREDIENTS HEADER ---
                   _buildSectionHeader(
@@ -136,7 +129,15 @@ class _IngredientsUtensilState extends State<IngredientsUtensil> {
                     );
                   }).toList(),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 28),
+
+                  if (showAds) ...[
+                    const AdBannerWidget(
+                      placementLabel:
+                          'Ingredientes Patrocinados • Google AdMob',
+                      margin: EdgeInsets.only(bottom: 24),
+                    ),
+                  ],
 
                   // --- PLAY BUTTON ---
                   Center(
@@ -165,6 +166,15 @@ class _IngredientsUtensilState extends State<IngredientsUtensil> {
                               icon: const Icon(Icons.play_arrow_rounded,
                                   size: 45, color: Colors.white),
                               onPressed: () async {
+                                if (showAds) {
+                                  final unlocked = await AdMobService.instance
+                                      .showRewardedAdToUnlockRecipe(
+                                    context,
+                                    recipeName: widget.recipe.nameRecipe,
+                                  );
+                                  if (!unlocked || !mounted) return;
+                                }
+
                                 if (widget.recipe.id != null) {
                                   setState(() => _isStartingRecipe = true);
                                   try {
@@ -192,10 +202,11 @@ class _IngredientsUtensilState extends State<IngredientsUtensil> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
+      ),
     );
   }
 
